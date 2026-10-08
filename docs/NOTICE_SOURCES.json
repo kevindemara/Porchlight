@@ -1,0 +1,32 @@
+{
+  "checked": "2026-10-07",
+  "records": [
+    {
+      "package": "@redocly/openapi-core",
+      "version": "1.34.20",
+      "source": "https://raw.githubusercontent.com/Redocly/redocly-cli/b563864727f1c7524021196d27bad4524f32e667/LICENSE.md",
+      "package_metadata_source": "https://raw.githubusercontent.com/Redocly/redocly-cli/b563864727f1c7524021196d27bad4524f32e667/packages/core/package.json",
+      "bytes": 1052,
+      "sha256": "f6bf9ce4d84b47c1cdda9d8988ac977efc314f00ad65e498fc514ddf118440b5",
+      "retained_file": "notices/frontend/@redocly/openapi-core/LICENSE.md"
+    },
+    {
+      "package": "change-case",
+      "version": "5.4.4",
+      "source": "https://raw.githubusercontent.com/blakeembrey/change-case/8aaff31471c918d3eac2b40939c601bee37375dd/LICENSE",
+      "package_metadata_source": "https://raw.githubusercontent.com/blakeembrey/change-case/8aaff31471c918d3eac2b40939c601bee37375dd/packages/change-case/package.json",
+      "bytes": 1103,
+      "sha256": "4eeb3271453a891df609e5a9f4ee79a68307f730c13417a3bfeffa604ac8cf25",
+      "retained_file": "notices/frontend/change-case/LICENSE"
+    },
+    {
+      "package": "@rolldown/binding-win32-x64-msvc",
+      "version": "1.2.12",
+      "source": "https://raw.githubusercontent.com/rolldown/rolldown/v1.2.12/LICENSE",
+      "package_metadata_source": "https://raw.githubusercontent.com/rolldown/rolldown/v1.2.12/packages/rolldown/package.json",
+      "bytes": 1302,
+      "sha256": "23ecfff35a5a2e80d92142f75228912c3b1abc4b5a8337a821ff4397e2f9f734",
+      "retained_file": "notices/frontend/@rolldown/binding-win32-x64-msvc/LICENSE"
+    }
+  ]
+}

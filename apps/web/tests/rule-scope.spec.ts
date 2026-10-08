@@ -1,0 +1,55 @@
+import { test, expect } from '@playwright/test'
+import { enterWorkspace } from './session'
+
+test('rule scope saves several cameras and object values and preserves removed camera selections', async ({ page }, info) => {
+  const cameras = [
+    { id: '00000000-0000-4000-8000-000000000001', name: 'Synthetic porch', network_name: 'Synthetic home', family: 'doorbells', observed_armed: null },
+    { id: '00000000-0000-4000-8000-000000000002', name: 'Synthetic garden', network_name: 'Synthetic home', family: 'cameras', observed_armed: null },
+  ]
+  let current = cameras
+  await page.route('**/api/v1/cameras', route => route.fulfill({ json: { items: current } }))
+  await enterWorkspace(page)
+  await page.getByRole('link', { name: 'Notifications', exact: true }).click()
+  await page.getByLabel('Rule name', { exact: true }).fill('Synthetic multiple object rule')
+  const scope = page.locator('.rule-scope')
+  await scope.getByText('Cameras: All cameras', { exact: true }).click()
+  await scope.getByRole('checkbox', { name: 'Synthetic porch · Synthetic home', exact: true }).check()
+  await scope.getByRole('checkbox', { name: 'Synthetic garden · Synthetic home', exact: true }).check()
+  await scope.getByText('Categories: All categories', { exact: true }).click()
+  await scope.getByRole('checkbox', { name: 'person', exact: true }).check()
+  await scope.getByRole('checkbox', { name: 'vehicle', exact: true }).check()
+  await scope.getByText('Colours: All colours', { exact: true }).click()
+  await scope.getByRole('checkbox', { name: 'red', exact: true }).check()
+  await scope.getByRole('checkbox', { name: 'black', exact: true }).check()
+  await scope.getByText('Directions: All directions', { exact: true }).click()
+  await scope.getByRole('checkbox', { name: 'left to right', exact: true }).check()
+  await scope.getByRole('checkbox', { name: 'toward camera', exact: true }).check()
+  await page.getByRole('button', { name: 'Save rule', exact: true }).click()
+  await expect(page.getByText('Rule saved.', { exact: true })).toBeVisible()
+  const saved = (await (await page.request.get('/api/v1/notification-rules')).json()).find((rule: { definition: { name: string } }) => rule.definition.name === 'Synthetic multiple object rule')
+  expect(saved.definition.camera_ids).toEqual(cameras.map(camera => camera.id))
+  expect(saved.definition.categories).toEqual(['person', 'vehicle'])
+  expect(saved.definition.colors).toEqual(['red', 'black'])
+  expect(saved.definition.directions).toEqual(['left_to_right', 'toward_camera'])
+  expect(saved.definition.enabled).toBe(false)
+  expect(saved.definition.unknown_policy).toBe('notify_generic')
+  current = [cameras[0]]
+  await page.reload()
+  await page.locator('.diagnostic-row').filter({ hasText: 'Synthetic multiple object rule' }).getByRole('button', { name: 'Edit rule', exact: true }).click()
+  await scope.getByText('Cameras: 2 selected', { exact: true }).click()
+  await expect(scope.getByRole('checkbox', { name: 'Unavailable camera · saved selection 1', exact: true })).toBeChecked()
+  await scope.getByText('Categories: 2 selected', { exact: true }).click()
+  await expect(scope.getByRole('checkbox', { name: 'person', exact: true })).toBeChecked()
+  await expect(scope.getByRole('checkbox', { name: 'vehicle', exact: true })).toBeChecked()
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+  await page.screenshot({ path: info.outputPath('rule-multiple-scope.png'), fullPage: true })
+  await scope.getByRole('button', { name: 'All categories', exact: true }).click()
+  await page.getByRole('button', { name: 'Save rule', exact: true }).click()
+  await expect(page.getByText('Rule saved.', { exact: true })).toBeVisible()
+  const updated = (await (await page.request.get('/api/v1/notification-rules')).json()).find((rule: { id: string }) => rule.id === saved.id)
+  expect(updated.definition.categories).toEqual([])
+  expect(updated.definition.camera_ids).toEqual(saved.definition.camera_ids)
+  expect(updated.definition.colors).toEqual(saved.definition.colors)
+  const session = await (await page.request.get('/api/v1/auth/session')).json()
+  expect((await page.request.delete(`/api/v1/notification-rules/${saved.id}?expected_revision=${updated.revision}`, { headers: { Origin: new URL(page.url()).origin, 'X-CSRF-Token': session.csrf_token } })).status()).toBe(204)
+})

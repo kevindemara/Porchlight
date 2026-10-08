@@ -1,0 +1,4 @@
+# Normalize source text while keeping Windows shell scripts native on checkout.
+* text=auto eol=lf
+*.ps1 text eol=crlf
+*.png binary

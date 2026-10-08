@@ -1,0 +1,41 @@
+{
+  "schema_version": "1.0",
+  "name": "Recorded activity",
+  "enabled": true,
+  "camera_ids": [],
+  "categories": [
+    "person",
+    "vehicle",
+    "animal",
+    "package",
+    "other",
+    "unknown"
+  ],
+  "colors": [],
+  "directions": [],
+  "unknown_policy": "notify_generic",
+  "channels": [
+    "in_app"
+  ],
+  "cooldown_seconds": 0,
+  "freshness_seconds": 1800,
+  "include_historical": false,
+  "privacy_mode": "generic",
+  "schedule": {
+    "timezone": "America/Toronto",
+    "active_iso_weekdays": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ],
+    "quiet_hours": {
+      "enabled": false,
+      "start": "22:00",
+      "end": "07:00"
+    }
+  }
+}

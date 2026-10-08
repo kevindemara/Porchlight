@@ -1,0 +1,12 @@
+{
+  "model": "face_recognition_sface_2021dec",
+  "commit": "26cc381e4d2594bb9f47a26eb8fd96c94a13660d",
+  "filename": "face_recognition_sface_2021dec.onnx",
+  "sha256": "0ba9fbfa01b5270c96627c4ef784da859931e02f04419c829e83484087c34e79",
+  "bytes": 38696353,
+  "url": "https://media.githubusercontent.com/media/opencv/opencv_zoo/26cc381e4d2594bb9f47a26eb8fd96c94a13660d/models/face_recognition_sface/face_recognition_sface_2021dec.onnx",
+  "license": "Apache-2.0",
+  "license_url": "https://raw.githubusercontent.com/opencv/opencv_zoo/26cc381e4d2594bb9f47a26eb8fd96c94a13660d/models/face_recognition_sface/LICENSE",
+  "license_bytes": 11358,
+  "license_sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+}

@@ -1,0 +1,9 @@
+{
+  "format": "porchlight-dependency-advisory-review-v1",
+  "checked_at": "2026-10-08T02:19:23.727245+00:00",
+  "source": "https://api.osv.dev/v1/querybatch",
+  "package_versions_checked": 2,
+  "affected_package_versions": 0,
+  "findings": [],
+  "scope": "Optional detector exact package versions only. Known advisory matches; not security, license or model-accuracy certification."
+}

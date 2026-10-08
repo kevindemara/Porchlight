@@ -1,0 +1,25 @@
+# Current limits — 2026-10-07
+
+The app is a runnable local development build. Automated fixtures establish code behavior; hardware and phone acceptance are separate. See [BUILD_STATUS.md](../BUILD_STATUS.md) for measured evidence.
+
+| Area | Working path | Remaining gate |
+|---|---|---|
+| Current Blink | Paid-cloud clips saved locally; owner confirmed playback | New subscription-free clips cannot be tested with Sync Module Core |
+| Sync Module retrieval | Separate gated manifest/prepared-transfer candidate | New compatible module, active removable storage, three fresh no-plan clips plus a fourth after restart; card/ID reuse |
+| Local AI | Existing native vision model, validated observations, manual/automatic queues | Owner accuracy review and labelled holdout; sampled frames can miss brief activity; uncertainty is not proof of truth |
+| Camera controls | Explicit arm/motion commands with pending/unknown/read-back | Real model-specific hardware writes require owner acceptance |
+| Live/Library | Experimental bounded video-only relay, Record/Snapshot, protected saved captures | Real browser playback/capture/reconnect; no two-way audio or continuous recording |
+| Phone | Installable shell, exact-origin proxy boundary, optional Web Push implementation | Optional encryption installation approval, native encryption test, HTTPS route and Android closed/locked-screen Wi-Fi/cellular tests |
+| Operations | Retention preview, backups/verified restore, redacted diagnostics, dependency audit | Soak, Windows sleep/resume, unavailable volume recovery, owner release acceptance |
+
+Internet and Blink services remain necessary for new retrieval/live sessions. Cloud downloads accept only validated relative REST locators; signed/external locators and redirects fail closed. Core has no supported removable recording storage. No-plan access is never inferred from paid-plan downloads or fixtures.
+
+All AI runs locally. Optional owner-named SFace recognition suggests matches from sampled, sufficiently clear faces; it is not proof of identity and has not been measured on a labelled real-camera holdout. Close-match suggestions and the separate automatic-sample switch use conservative, uncalibrated similarity thresholds; a wrong match remains possible, so review original recordings and named profiles. Demographic inference and claims of criminal intent are excluded. Generic alerts are the default; descriptive alerts are an explicit setting. Standard Web Push uses browser-vendor infrastructure and cannot be considered wholly local delivery. Only the documented Chrome/Firefox endpoint families are candidates; other browsers are unverified.
+
+Optional self-hosted ntfy, scheduled/generated AI digests and native Android packaging are later items. Preview-first Windows startup scripts now exist; no task has been registered and actual sign-in behavior remains an owner gate. Authenticated SSE updates now complement polling. A bounded 512-entry invalidation log resyncs on restart or a replay gap; it carries topic names only. Historical cloud retrieval has explicit range/start/stop/resume controls, subject to recordings still available from Blink. The daily digest remains deterministic and on demand. The PC must remain awake/reachable; no sleep, service, firewall or tunnel setting has been changed. GPU status covers the shared Ollama service and does not measure other applications.
+
+No external deployment or repository push has occurred. Future pushes remain private. Dependencies and model weights are not bundled; the project distribution licence remains an owner decision.
+
+Evidence previews are regenerated from local originals, then checked against the accepted frame JPEG hash; they are not extra persisted archive files. Tool changes, removed media or old extraction versions can make a preview unavailable. Original playback and legacy sampled-time buttons remain available. Balanced retains up to six samples; Light up to three can miss brief activity. An earlier native Light probe failed validation; a later prompt1.1 run accepted three frames in36.83 seconds. Balanced remains selected. An accepted result is not a visual-accuracy benchmark.
+
+History is a silent archive: its recordings do not generate alerts or automatic AI, including manual reanalysis later. Fresh ordinary sync retains priority and independent controls. Stopping history prevents new discovery; an active transfer can finish. Guided setup, measured long-history virtualization and structured owner corrections are implemented/tested. Four-viewport journeys cover focus, labels, conflicts and contract behavior; native Light subtype evaluation and accessibility acceptance still need broader owner evidence. See [the release evidence review](RELEASE_AUDIT.md).

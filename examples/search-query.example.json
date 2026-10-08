@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0",
+  "text_query": "",
+  "camera_ids": [],
+  "categories": [
+    "vehicle"
+  ],
+  "color": "white",
+  "time_range": {
+    "preset": "yesterday",
+    "start": null,
+    "end": null,
+    "daypart": "afternoon"
+  },
+  "favorites_only": false,
+  "needs_clarification": false,
+  "clarification": null
+}

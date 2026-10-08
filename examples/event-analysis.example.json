@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.0",
+  "observation_mode": "video_frames",
+  "scene_visibility": "daylight_color",
+  "summary_suggestion": "A white car moves from left to right in the visible roadway.",
+  "entities": [
+    {
+      "entity_id": "e01",
+      "category": "vehicle",
+      "subtype": "car",
+      "color": "white",
+      "color_evidence": "visible",
+      "actions": [
+        "visible",
+        "moving",
+        "passing"
+      ],
+      "direction": "left_to_right",
+      "evidence_frame_ids": [
+        "f000",
+        "f002",
+        "f005"
+      ]
+    }
+  ],
+  "uncertainty": [
+    "The sampled frames do not establish activity outside the visible area or between samples."
+  ]
+}

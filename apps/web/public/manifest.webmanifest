@@ -1,0 +1,17 @@
+{
+  "id": "/",
+  "name": "Porchlight",
+  "short_name": "Porchlight",
+  "description": "Your private camera recordings and local analysis.",
+  "start_url": "/#cameras",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#17231e",
+  "theme_color": "#17231e",
+  "icons": [
+    { "src": "/icons/porchlight-v3-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/porchlight-v3-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/porchlight-v3-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
+

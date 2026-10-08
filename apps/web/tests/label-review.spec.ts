@@ -1,0 +1,62 @@
+import { test, expect } from '@playwright/test'
+import { enterWorkspace } from './session'
+
+test('owner object review: actual API save, effective filters, conflict, empty set and reset', async ({ page }, testInfo) => {
+  const errors: string[] = []
+  page.on('pageerror', error => errors.push(error.message))
+  await enterWorkspace(page)
+  const session = await (await page.request.get('/api/v1/auth/session')).json()
+  const headers = { Origin: new URL(page.url()).origin, 'X-CSRF-Token': session.csrf_token, 'Content-Type': 'image/jpeg' }
+  // An explicitly generated solid-colour JPEG, decoded by the native importer. No owner image.
+  const { execFileSync } = await import('node:child_process')
+  const { mkdtempSync, readFileSync, rmSync } = await import('node:fs')
+  const { tmpdir } = await import('node:os')
+  const { join } = await import('node:path')
+  const directory = mkdtempSync(join(tmpdir(), 'porchlight-labels-'))
+  let event: { id: string } | null = null
+  try {
+    const image = join(directory, 'generated.jpg')
+    execFileSync(join(process.env.LOCALAPPDATA!, 'Porchlight/tools/ffmpeg/bin/ffmpeg.exe'), ['-v', 'error', '-nostdin', '-f', 'lavfi', '-i', 'color=c=pink:s=320x240', '-frames:v', '1', '-y', image])
+    const imported = await page.request.post('/api/v1/imports', { headers, data: readFileSync(image) })
+    expect(imported.status()).toBe(201); event = await imported.json()
+    await page.goto(`/#activity?event=${event!.id}`)
+    const dialog = page.getByRole('dialog')
+    await expect(dialog).toBeVisible()
+    await dialog.getByRole('button', { name: 'Description is wrong · correct object labels', exact: true }).click()
+    await dialog.getByRole('button', { name: 'Add object', exact: true }).click()
+    await dialog.getByRole('combobox', { name: 'Category', exact: true }).selectOption('vehicle')
+    await dialog.getByRole('combobox', { name: 'Type', exact: true }).selectOption('truck')
+    await dialog.getByRole('combobox', { name: 'Colour', exact: true }).selectOption('red')
+    await dialog.getByRole('combobox', { name: 'Direction', exact: true }).selectOption('left_to_right')
+    await dialog.getByLabel('passing', { exact: true }).check()
+    await dialog.getByLabel('visible', { exact: true }).uncheck()
+    expect(await dialog.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true)
+    await page.screenshot({ path: testInfo.outputPath('owner-label-editor.png') })
+    await dialog.getByRole('button', { name: 'Save object labels', exact: true }).click()
+    await expect(dialog.getByText('Your labels saved. No new alert was sent.')).toBeVisible()
+    await expect(dialog.getByText('Your object labels · revision 1')).toBeVisible()
+    const filtered = await (await page.request.get('/api/v1/events?category=vehicle&color=red&action=passing')).json()
+    expect(filtered.items.some((item: { id: string }) => item.id === event!.id)).toBe(true)
+    await dialog.getByRole('button', { name: 'Description is wrong · correct object labels', exact: true }).click()
+    const concurrent = await page.request.put(`/api/v1/events/${event!.id}/labels`, { headers: { ...headers, 'Content-Type': 'application/json' }, data: { revision: 1, entities: [{ category: 'package', subtype: 'box' }] } })
+    expect(concurrent.status()).toBe(200)
+    await dialog.getByRole('button', { name: 'Save object labels', exact: true }).click()
+    await expect(dialog.getByText('These labels changed in another view. Reload labels before saving.')).toBeVisible()
+    await dialog.getByRole('button', { name: 'Reload labels and discard this draft', exact: true }).click()
+    await expect(dialog.getByRole('combobox', { name: 'Category', exact: true })).toHaveValue('package')
+    await dialog.getByRole('button', { name: 'Remove object 1', exact: true }).click()
+    await dialog.getByRole('button', { name: 'Save object labels', exact: true }).click()
+    await expect(dialog.getByText('No objects labelled.', { exact: true })).toBeVisible()
+    expect((await (await page.request.get(`/api/v1/events/${event!.id}`)).json()).corrected_entities).toEqual([])
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+    await page.screenshot({ path: testInfo.outputPath('owner-label-review.png') })
+    await dialog.getByRole('button', { name: 'Description is wrong · correct object labels', exact: true }).click()
+    await dialog.getByRole('button', { name: 'Use original AI labels', exact: true }).click()
+    await expect(dialog.getByText('Original AI labels restored.', { exact: true })).toBeVisible()
+    expect((await (await page.request.get(`/api/v1/events/${event!.id}`)).json()).corrected_entities).toBeNull()
+    expect(errors).toEqual([])
+  } finally {
+    if (event) await page.request.delete(`/api/v1/events/${event.id}`, { headers, timeout: 1000 }).catch(() => undefined)
+    rmSync(directory, { recursive: true, force: true })
+  }
+})

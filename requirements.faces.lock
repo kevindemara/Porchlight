@@ -1,0 +1,3 @@
+# Optional CPU-only detection. No recognition model or enrollment database.
+opencv-python-headless==4.14.0.94
+numpy==2.5.3

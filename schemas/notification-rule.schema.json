@@ -1,0 +1,192 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:porchlight:notification-rule:1.0",
+  "title": "Deterministic notification rule, not a model command",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80
+    },
+    "enabled": {
+      "type": "boolean"
+    },
+    "camera_ids": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "minItems": 0,
+      "maxItems": 32,
+      "uniqueItems": true
+    },
+    "categories": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "person",
+          "vehicle",
+          "animal",
+          "package",
+          "other",
+          "unknown"
+        ]
+      },
+      "minItems": 0,
+      "maxItems": 6,
+      "uniqueItems": true
+    },
+    "colors": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "black",
+          "white",
+          "gray",
+          "silver",
+          "blue",
+          "red",
+          "green",
+          "yellow",
+          "orange",
+          "brown",
+          "beige",
+          "other"
+        ]
+      },
+      "minItems": 0,
+      "maxItems": 12,
+      "uniqueItems": true
+    },
+    "directions": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "left_to_right",
+          "right_to_left",
+          "toward_camera",
+          "away_from_camera",
+          "stationary",
+          "unknown"
+        ]
+      },
+      "minItems": 0,
+      "maxItems": 6,
+      "uniqueItems": true
+    },
+    "unknown_policy": {
+      "type": "string",
+      "enum": [
+        "notify_generic",
+        "suppress"
+      ]
+    },
+    "channels": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "in_app",
+          "web_push",
+          "ntfy"
+        ]
+      },
+      "minItems": 1,
+      "maxItems": 3,
+      "uniqueItems": true
+    },
+    "cooldown_seconds": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 86400
+    },
+    "freshness_seconds": {
+      "type": "integer",
+      "minimum": 60,
+      "maximum": 86400
+    },
+    "include_historical": {
+      "const": false
+    },
+    "privacy_mode": {
+      "type": "string",
+      "enum": [
+        "generic",
+        "descriptive"
+      ]
+    },
+    "schedule": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "timezone": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "active_iso_weekdays": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 7
+          },
+          "minItems": 1,
+          "maxItems": 7,
+          "uniqueItems": true
+        },
+        "quiet_hours": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "start": {
+              "type": "string",
+              "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]$"
+            },
+            "end": {
+              "type": "string",
+              "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]$"
+            }
+          },
+          "required": [
+            "enabled",
+            "start",
+            "end"
+          ]
+        }
+      },
+      "required": [
+        "timezone",
+        "active_iso_weekdays",
+        "quiet_hours"
+      ]
+    }
+  },
+  "required": [
+    "schema_version",
+    "name",
+    "enabled",
+    "camera_ids",
+    "categories",
+    "colors",
+    "directions",
+    "unknown_policy",
+    "channels",
+    "cooldown_seconds",
+    "freshness_seconds",
+    "include_historical",
+    "privacy_mode",
+    "schedule"
+  ]
+}

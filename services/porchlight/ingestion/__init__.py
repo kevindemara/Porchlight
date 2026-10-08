@@ -1,0 +1,1 @@
+"""Validated local media ingestion."""

@@ -1,0 +1,27 @@
+{
+  "schema_version": "1.0",
+  "observation_mode": "video_frames",
+  "scene_visibility": "infrared_monochrome",
+  "summary_suggestion": "A vehicle is visible. Its colour and motion are unclear in these frames.",
+  "entities": [
+    {
+      "entity_id": "e01",
+      "category": "vehicle",
+      "subtype": null,
+      "color": null,
+      "color_evidence": "uncertain",
+      "actions": [
+        "visible"
+      ],
+      "direction": "unknown",
+      "evidence_frame_ids": [
+        "f001",
+        "f003"
+      ]
+    }
+  ],
+  "uncertainty": [
+    "Infrared lighting does not support a reliable vehicle colour claim.",
+    "Blur prevents a reliable temporal interpretation."
+  ]
+}

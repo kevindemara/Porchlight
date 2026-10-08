@@ -1,0 +1,59 @@
+{
+  "schema_version": "1.0",
+  "server": {
+    "host": "127.0.0.1",
+    "port": 8765,
+    "trusted_proxy_addresses": []
+  },
+  "storage": {
+    "data_root": "%LOCALAPPDATA%\\Porchlight",
+    "media_root": null,
+    "ordinary_retention_days": 30,
+    "soft_budget_gib": 50,
+    "free_space_reserve_gib": 5,
+    "protect_favorites": true,
+    "automatic_deletion_approved": false,
+    "delete_upstream": false
+  },
+  "blink": {
+    "background_discovery_interval_seconds": 120,
+    "minimum_background_interval_seconds": 60,
+    "parallel_account_operations": 1,
+    "historical_notifications_enabled": false
+  },
+  "ai": {
+    "enabled": false,
+    "endpoint": "http://127.0.0.1:11434",
+    "model": null,
+    "cloud_fallback_enabled": false,
+    "max_concurrent_jobs": 1,
+    "max_frames": 6,
+    "max_image_long_edge_pixels": 960,
+    "max_image_payload_bytes": 8388608,
+    "request_timeout_seconds": 90,
+    "candidate_num_ctx": 8192,
+    "candidate_keep_alive": "60s",
+    "fresh_events_before_backfill": true
+  },
+  "notifications": {
+    "in_app_enabled": true,
+    "web_push_enabled": false,
+    "ntfy_enabled": false,
+    "privacy_mode": "generic",
+    "ai_wait_deadline_seconds": 120,
+    "historical_notifications_enabled": false
+  },
+  "ui": {
+    "timezone": "America/Toronto",
+    "theme": "system",
+    "playback_muted": true
+  },
+  "experimental": {
+    "live_view_enabled": false
+  },
+  "privacy": {
+    "telemetry_enabled": false,
+    "raw_ai_debug_output_enabled": false,
+    "private_media_service_worker_cache_enabled": false
+  }
+}

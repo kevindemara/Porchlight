@@ -1,0 +1,172 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:porchlight:event-analysis:1.0",
+  "title": "Porchlight bounded visual observation",
+  "description": "Shape only. The backend must additionally validate evidence, temporal claims, visibility, category consistency and safe summaries.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "observation_mode": {
+      "type": "string",
+      "enum": [
+        "video_frames",
+        "single_image"
+      ]
+    },
+    "scene_visibility": {
+      "type": "string",
+      "enum": [
+        "daylight_color",
+        "low_light_color",
+        "infrared_monochrome",
+        "obscured",
+        "unknown"
+      ]
+    },
+    "summary_suggestion": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 500
+    },
+    "entities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "entity_id": {
+            "type": "string",
+            "pattern": "^e[0-9]{2}$"
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "person",
+              "vehicle",
+              "animal",
+              "package",
+              "other",
+              "unknown"
+            ]
+          },
+          "subtype": {
+            "enum": [
+              "car",
+              "truck",
+              "van",
+              "bus",
+              "motorcycle",
+              "bicycle",
+              "dog",
+              "cat",
+              "bird",
+              "box",
+              "envelope",
+              null
+            ]
+          },
+          "color": {
+            "enum": [
+              "black",
+              "white",
+              "gray",
+              "silver",
+              "blue",
+              "red",
+              "green",
+              "yellow",
+              "orange",
+              "brown",
+              "beige",
+              "other",
+              null
+            ]
+          },
+          "color_evidence": {
+            "type": "string",
+            "enum": [
+              "visible",
+              "uncertain",
+              "not_applicable"
+            ]
+          },
+          "actions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "visible",
+                "moving",
+                "passing",
+                "approaching",
+                "departing",
+                "stopping",
+                "parked",
+                "placing_object",
+                "picking_up_object",
+                "unknown"
+              ]
+            },
+            "minItems": 1,
+            "maxItems": 6,
+            "uniqueItems": true
+          },
+          "direction": {
+            "type": "string",
+            "enum": [
+              "left_to_right",
+              "right_to_left",
+              "toward_camera",
+              "away_from_camera",
+              "stationary",
+              "unknown"
+            ]
+          },
+          "evidence_frame_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^f[0-9]{3}$"
+            },
+            "minItems": 1,
+            "maxItems": 12,
+            "uniqueItems": true
+          }
+        },
+        "required": [
+          "entity_id",
+          "category",
+          "subtype",
+          "color",
+          "color_evidence",
+          "actions",
+          "direction",
+          "evidence_frame_ids"
+        ]
+      },
+      "minItems": 0,
+      "maxItems": 12
+    },
+    "uncertainty": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 240
+      },
+      "minItems": 0,
+      "maxItems": 8
+    }
+  },
+  "required": [
+    "schema_version",
+    "observation_mode",
+    "scene_visibility",
+    "summary_suggestion",
+    "entities",
+    "uncertainty"
+  ]
+}

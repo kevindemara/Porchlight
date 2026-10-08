@@ -1,0 +1,6 @@
+# Optional Web Push packages. Install only through the explicit opt-in script.
+# Existing core dependencies remain pinned in requirements.lock.
+pywebpush==2.5.0
+cryptography==50.0.2
+py-vapid==1.9.4
+http-ece==1.2.1

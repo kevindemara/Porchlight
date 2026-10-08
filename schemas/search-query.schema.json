@@ -1,0 +1,132 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:porchlight:search-query:1.0",
+  "title": "Bounded event search intent, never SQL",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "text_query": {
+      "type": "string",
+      "maxLength": 200
+    },
+    "camera_ids": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "minItems": 0,
+      "maxItems": 32,
+      "uniqueItems": true
+    },
+    "categories": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "person",
+          "vehicle",
+          "animal",
+          "package",
+          "other",
+          "unknown"
+        ]
+      },
+      "minItems": 0,
+      "maxItems": 6,
+      "uniqueItems": true
+    },
+    "color": {
+      "enum": [
+        "black",
+        "white",
+        "gray",
+        "silver",
+        "blue",
+        "red",
+        "green",
+        "yellow",
+        "orange",
+        "brown",
+        "beige",
+        "other",
+        null
+      ]
+    },
+    "time_range": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "preset": {
+          "type": "string",
+          "enum": [
+            "none",
+            "today",
+            "yesterday",
+            "last_7_days",
+            "custom"
+          ]
+        },
+        "start": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time",
+          "maxLength": 40
+        },
+        "end": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time",
+          "maxLength": 40
+        },
+        "daypart": {
+          "type": "string",
+          "enum": [
+            "all",
+            "morning",
+            "afternoon",
+            "evening",
+            "night"
+          ]
+        }
+      },
+      "required": [
+        "preset",
+        "start",
+        "end",
+        "daypart"
+      ]
+    },
+    "favorites_only": {
+      "type": "boolean"
+    },
+    "needs_clarification": {
+      "type": "boolean"
+    },
+    "clarification": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 240
+    }
+  },
+  "required": [
+    "schema_version",
+    "text_query",
+    "camera_ids",
+    "categories",
+    "color",
+    "time_range",
+    "favorites_only",
+    "needs_clarification",
+    "clarification"
+  ]
+}

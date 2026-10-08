@@ -1,0 +1,13 @@
+{
+  "schema_version": "1.0",
+  "summary": "In the supplied example records, a vehicle was visible in one recording and activity in another could not be classified.",
+  "highlights": [
+    {
+      "text": "A white car moved from left to right in the visible roadway.",
+      "event_ids": [
+        "11111111-1111-4111-8111-111111111111"
+      ]
+    }
+  ],
+  "coverage_note": "This synthetic example includes a coverage gap and is not a complete account of everything that happened."
+}
