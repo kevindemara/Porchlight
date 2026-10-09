@@ -55,7 +55,8 @@ def sanitize(connection: sqlite3.Connection) -> None:
             connection.execute(f"DELETE FROM {table}")
     connection.execute(
         "DELETE FROM integration_state WHERE id IN ('blink', 'blink_live_certificates') "
-        "OR id LIKE 'live_%' OR id IN ('push_control', 'face_detection')"
+        "OR id LIKE 'live_%' OR id LIKE 'push_receipt:%' "
+        "OR id IN ('push_control', 'face_detection')"
     )
     for row_id, values in connection.execute('SELECT id, "values" FROM settings').fetchall():
         data = json.loads(values)

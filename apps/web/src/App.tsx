@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Activity, Bell, HardDrive, LogOut, ScanFace, Settings as SettingsIcon, ShieldCheck, Upload, Video } from 'lucide-react'
 import BrandMark from './components/BrandMark'
 import OwnerForm from './components/OwnerForm'
@@ -53,6 +53,10 @@ export default function App() {
   const [feedback, setFeedback] = useState('')
   const upload = useRef<HTMLInputElement>(null)
   const eventRequest = useRef(0)
+
+  useLayoutEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
+  }, [page])
 
   const acceptSession = useCallback((value: Session | null) => { setSession(value); updateSession(value) }, [])
   const initialize = useCallback(async () => {
@@ -128,7 +132,11 @@ export default function App() {
   useEffect(() => {
     const theme = settings?.theme ?? 'system'
     const media = window.matchMedia('(prefers-color-scheme: dark)')
-    const apply = () => { document.documentElement.dataset.theme = theme === 'system' ? (media.matches ? 'dark' : 'light') : theme }
+    const apply = () => {
+      const root = document.documentElement
+      root.dataset.theme = theme === 'system' ? (media.matches ? 'dark' : 'light') : theme
+      document.querySelector<HTMLMetaElement>('meta[name="theme-color"]')?.setAttribute('content', getComputedStyle(root).getPropertyValue('--background').trim())
+    }
     apply(); media.addEventListener('change', apply)
     return () => media.removeEventListener('change', apply)
   }, [settings?.theme])

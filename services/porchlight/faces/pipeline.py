@@ -7,6 +7,7 @@ import json
 import logging
 import sys
 import time
+from collections.abc import Callable
 from datetime import UTC, datetime
 from typing import cast
 from uuid import UUID, uuid4
@@ -39,6 +40,7 @@ from porchlight.faces.gallery import GalleryItem, group_faces, suggest_face
 from porchlight.faces.people import People
 from porchlight.faces.recognizer import MANIFEST as RECOGNIZER_MANIFEST
 from porchlight.faces.recognizer import Recognizer, check_recognizer, feature_for_box, rank_profiles
+from porchlight.notifications import plan_face_notification_update
 from porchlight.storage.database import Database
 from porchlight.storage.models import (
     Analysis,
@@ -94,6 +96,7 @@ class FacePipeline:
         self.config, self.db = config, db
         self.people = People(config.data_root)
         self.wake = asyncio.Event()
+        self.on_completed: Callable[[], None] | None = None
         self.gallery_lock = asyncio.Lock()
         self.gallery_cache: tuple[object, FaceGallery] | None = None
         with db.session() as session:
@@ -981,7 +984,14 @@ class FacePipeline:
                         )
                     )
                 current.status, current.lease_until, current.safe_error = "done", None, None
+                if job.payload.get("automatic"):
+                    event = session.get(Event, job.payload["event_id"])
+                    if event:
+                        session.flush()
+                        plan_face_notification_update(session, event)
                 session.commit()
+            if job.payload.get("automatic") and self.on_completed:
+                self.on_completed()
             try:
                 await self.maybe_add_automatic_samples(job.payload["event_id"], report)
             except Exception:

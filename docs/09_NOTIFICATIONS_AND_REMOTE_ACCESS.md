@@ -22,7 +22,7 @@ Create VAPID keys locally and store the private key in the vault. Register devic
 
 Payload contains an event ID, notification tag, bounded safe title/body, and an authenticated app route. Default to generic text; descriptive text is an explicit privacy setting. Include enough text in the push payload to display without fetching the home server. Do not include signed Blink URLs, account data, raw frame content, or a public thumbnail URL. Disable external notification images by default.
 
-The service worker displays the push notification and opens/focuses the app on click. It should not fetch or cache private recordings in the background. Vendor infrastructure can observe routing/timing metadata; properly encrypted payload delivery does not mean zero third-party metadata exposure.
+The service worker displays the push notification and opens/focuses the app on click. It must not fetch or cache private video recordings in the background. The separately opted-in thumbnail setting permits one bounded authenticated JPEG fetch per alert, with text-only fallback; no public media endpoint or offline media cache is added. Vendor infrastructure can observe routing/timing metadata; properly encrypted payload delivery does not mean zero third-party metadata exposure.
 
 Handle expired endpoints (for example terminal gone responses), revocation, permission changes and key rotation. Keep per-device test status. An HTTP success from the transport means `transport_accepted`, not proof that the user saw a lock-screen notification.
 

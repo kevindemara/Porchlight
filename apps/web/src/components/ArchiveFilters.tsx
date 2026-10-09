@@ -29,7 +29,7 @@ export default function ArchiveFilters({ value, cameras, onChange, onClear }: {
       {select('category', 'Observed category', ['person', 'vehicle', 'animal', 'package', 'other', 'unknown'])}
       {select('color', 'Observed colour', ['black', 'white', 'gray', 'silver', 'blue', 'red', 'green', 'yellow', 'orange', 'brown', 'beige', 'other'])}
       {select('direction', 'Observed direction', ['left_to_right', 'right_to_left', 'toward_camera', 'away_from_camera', 'stationary', 'unknown'])}
-      {select('action', 'Observed action', ['visible', 'moving', 'passing', 'approaching', 'departing', 'stopping', 'parked', 'placing_object', 'picking_up_object', 'unknown'])}
+      {select('action', 'Observed action', ['visible', 'moving', 'passing', 'approaching', 'departing', 'stopping', 'parked', 'placing_object', 'picking_up_object', 'opening_door', 'closing_door', 'entering_doorway', 'exiting_doorway', 'unknown'])}
       {select('source', 'Recording source', ['blink_cloud', 'blink_local', 'manual_import', 'live_capture', 'live_recording', 'live_snapshot'])}
       {select('analysis', 'Analysis status', ['not_analyzed', 'queued', 'analyzing', 'analyzed', 'analysis_failed'])}
       {(['start', 'end'] as const).map(key => <label key={key}>{key === 'start' ? 'From' : 'Until'} (device time)<input type="datetime-local" value={value[key]} onChange={e => onChange({ ...value, [key]: e.target.value })} /></label>)}

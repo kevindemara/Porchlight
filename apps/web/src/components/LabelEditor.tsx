@@ -4,7 +4,7 @@ import { ApiError, api, message, type AnalysisView, type Event, type OwnerEntity
 const categories = ['person', 'vehicle', 'animal', 'package', 'other', 'unknown'] as const
 const colors = ['black', 'white', 'gray', 'silver', 'blue', 'red', 'green', 'yellow', 'orange', 'brown', 'beige', 'other'] as const
 const directions = ['left_to_right', 'right_to_left', 'toward_camera', 'away_from_camera', 'stationary', 'unknown'] as const
-const actions = ['visible', 'moving', 'passing', 'approaching', 'departing', 'stopping', 'parked', 'placing_object', 'picking_up_object', 'unknown'] as const
+const actions = ['visible', 'moving', 'passing', 'approaching', 'departing', 'stopping', 'parked', 'placing_object', 'picking_up_object', 'opening_door', 'closing_door', 'entering_doorway', 'exiting_doorway', 'unknown'] as const
 const subtypes: Partial<Record<OwnerEntity['category'], NonNullable<OwnerEntity['subtype']>[]>> = { vehicle: ['car', 'truck', 'van', 'bus', 'motorcycle', 'bicycle'], animal: ['dog', 'cat', 'bird'], package: ['box', 'envelope'] }
 type Row = { key: string; value: OwnerEntity }
 const blank = (): Row => ({ key: crypto.randomUUID(), value: { category: 'unknown', subtype: null, color: null, actions: ['visible'], direction: 'unknown' } })

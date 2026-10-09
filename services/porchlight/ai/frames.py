@@ -10,7 +10,8 @@ from porchlight.api.contracts import ApiError
 from porchlight.config import Config
 from porchlight.ingestion.imports import run_tool
 
-EXTRACTION_VERSION = "uniform-up-to-six-local-change-v3"
+EXTRACTION_VERSION = "change-pairs-up-to-six-v4"
+REVIEWABLE_EXTRACTIONS = {EXTRACTION_VERSION, "uniform-up-to-six-local-change-v3"}
 SIGNATURE_EDGE = 48
 
 
@@ -123,10 +124,10 @@ async def extract_frames(
         or not (media_type == "image/jpeg" and duration == 0 or 0 < duration <= 300)
     ):
         raise ApiError(404, "MEDIA_NOT_FOUND", "The saved recording is unavailable.")
-    frames: list[Frame] = []
-    total = 0
-    for index in range(1 if media_type == "image/jpeg" else policy.frames):
-        offset = min(duration * index / (policy.frames - 1), max(0, duration - 0.12))
+    candidates: list[tuple[int, bytes]] = []
+    count = 1 if media_type == "image/jpeg" else policy.frames * 2 - 1
+    for index in range(count):
+        offset = min(duration * index / max(1, count - 1), max(0, duration - 0.12))
         common = (
             executable,
             "-v",
@@ -160,9 +161,14 @@ async def extract_frames(
         )
         if len(signature) != SIGNATURE_EDGE * SIGNATURE_EDGE * 3:
             continue
-        if any(similar(frame.signature, signature) for frame in frames):
+        if candidates and similar(candidates[-1][1], signature):
             continue
-        image = await frame_image(path, round(offset * 1000), config, media_type, workload)
+        candidates.append((round(offset * 1000), signature))
+    frames: list[Frame] = []
+    total = 0
+    for index in select_change_frames(candidates, policy.frames):
+        offset_ms, signature = candidates[index]
+        image = await frame_image(path, offset_ms, config, media_type, workload)
         total += len(image)
         if not image.startswith(b"\xff\xd8") or total > 8 * 1024**2:
             raise ApiError(422, "FRAME_LIMIT", "The recording exceeds the image analysis budget.")
@@ -173,7 +179,7 @@ async def extract_frames(
         frames.append(
             Frame(
                 id=f"f{len(frames) + 1:03}",
-                offset_ms=round(offset * 1000),
+                offset_ms=offset_ms,
                 sha256=hashlib.sha256(image).hexdigest(),
                 image=image,
                 signature=signature,
@@ -184,3 +190,28 @@ async def extract_frames(
     if not frames:
         raise ApiError(422, "NO_ANALYSIS_FRAMES", "No usable images could be extracted.")
     return frames
+
+
+def select_change_frames(candidates: list[tuple[int, bytes]], limit: int) -> list[int]:
+    """Keep clip boundaries and before/after pairs around strongest visible changes."""
+    if len(candidates) <= limit:
+        return list(range(len(candidates)))
+    selected = {0, len(candidates) - 1}
+    ranked = sorted(
+        range(1, len(candidates)),
+        key=lambda index: max(
+            abs(a - b) for a, b in zip(candidates[index - 1][1], candidates[index][1], strict=True)
+        ),
+        reverse=True,
+    )
+    for index in ranked:
+        pair = {index - 1, index}
+        if len(selected | pair) <= limit:
+            selected |= pair
+        if len(selected) == limit:
+            break
+    # Odd budgets can leave a single slot after keeping pairs.
+    for index in ranked:
+        if len(selected) < limit:
+            selected.add(index)
+    return sorted(selected)

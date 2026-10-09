@@ -124,6 +124,50 @@ def test_temporal_evidence_requires_distinct_images_not_just_timestamps() -> Non
     assert summary == "A white car passes from left to right."
 
 
+@pytest.mark.parametrize("invalid", [None, "still", "missing", "reversed", "outside", "vehicle"])
+def test_door_actions_need_action_specific_person_and_temporal_evidence(invalid):
+    data = observation()
+    entity = data["entities"][0]
+    entity.update(
+        category="person",
+        subtype=None,
+        color=None,
+        actions=["opening_door", "exiting_doorway"],
+        direction="unknown",
+        evidence_frame_ids=["f001", "f002"],
+        action_evidence={a: ["f001", "f002"] for a in ["opening_door", "exiting_doorway"]},
+    )
+    frames = [frame(1, 0), frame(2, 100), frame(3, 200)]
+    if invalid == "still":
+        frames[1] = frame(2, 0)
+    if invalid == "missing":
+        entity.pop("action_evidence")
+    if invalid == "reversed":
+        entity["action_evidence"] = {a: ["f002", "f001"] for a in entity["actions"]}
+    if invalid == "outside":
+        entity["action_evidence"] = {a: ["f002", "f003"] for a in entity["actions"]}
+    if invalid == "vehicle":
+        entity["category"], entity["subtype"] = "vehicle", "car"
+    validated, summary = validate_observation(json.dumps(data), frames)
+    if invalid is None:
+        assert summary == "A person opens the door and exits through the doorway."
+    else:
+        assert "door" not in summary
+        assert validated["entities"][0]["actions"] == ["visible"]
+        assert not validated["entities"][0].get("action_evidence")
+
+
+def test_change_selection_keeps_brief_transition_before_after_and_clip_boundaries():
+    from porchlight.ai.frames import select_change_frames
+
+    candidates = [
+        (i * 100, bytes([v]) * 24) for i, v in enumerate([0, 1, 2, 3, 100, 4, 5, 6, 7, 8, 9])
+    ]
+    selected = select_change_frames(candidates, 6)
+    assert len(selected) == 6 and selected == sorted(selected)
+    assert {0, 3, 4, 5, 10} <= set(selected)
+
+
 def test_identical_action_tags_are_canonicalized_without_accepting_unknown_actions() -> None:
     data = observation()
     entity = data["entities"][0]

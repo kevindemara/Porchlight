@@ -30,6 +30,7 @@ from porchlight.api.contracts import (
     PushDeliveryView,
     PushDeviceView,
     PushPairRequest,
+    PushReceipt,
     PushStatus,
 )
 from porchlight.config import Config
@@ -190,7 +191,7 @@ class NativePushSender:
                 content_encoding="aes128gcm",
                 ttl=ttl,
                 timeout=10,
-                headers={"Topic": topic, "Urgency": "normal"},
+                headers={"Topic": topic, "Urgency": "high"},
                 requests_session=SafePushSession(),
                 verbose=False,
             )
@@ -209,6 +210,7 @@ class WebPush:
         self, config: Config, db: Database, vault: SecretStore, sender: PushSender | None = None
     ):
         self.config, self.db, self.vault = config, db, vault
+        self.wake = asyncio.Event()
         self.sender = sender or NativePushSender()
         self.lock = threading.RLock()
         with db.session() as session:
@@ -256,12 +258,44 @@ class WebPush:
                         status=row.status,
                         created_at=row.created_at,
                         safe_error=row.safe_error,
+                        browser_receipt=(
+                            PushReceipt(**receipt.values)
+                            if (receipt := session.get(IntegrationState, f"push_receipt:{row.id}"))
+                            else None
+                        ),
                     )
                     for row in session.scalars(
                         select(PushDelivery).order_by(PushDelivery.created_at.desc()).limit(30)
                     )
                 ],
             )
+
+    def receipt(self, delivery_id: str, body: PushReceipt) -> None:
+        # Owner-authenticated diagnostic, not an OS display/read acknowledgement.
+        # Only enum/boolean metadata is stored, never notification text or media.
+        with self.db.session() as session:
+            row = session.get(PushDelivery, delivery_id)
+            if not row or row.attempt < 1:
+                raise ApiError(404, "PUSH_DELIVERY_NOT_FOUND", "This delivery is unavailable.")
+            recent = set(
+                session.scalars(
+                    select(PushDelivery.id).order_by(PushDelivery.created_at.desc()).limit(30)
+                )
+            )
+            if delivery_id not in recent:
+                raise ApiError(410, "PUSH_RECEIPT_EXPIRED", "This delivery is too old.")
+            for old_receipt in session.scalars(
+                select(IntegrationState).where(IntegrationState.id.like("push_receipt:%"))
+            ):
+                if old_receipt.id.removeprefix("push_receipt:") not in recent:
+                    session.delete(old_receipt)
+            key = f"push_receipt:{delivery_id}"
+            saved = session.get(IntegrationState, key)
+            if not saved:
+                saved = IntegrationState(id=key, values={})
+                session.add(saved)
+            saved.values = body.model_dump()
+            session.commit()
 
     def configure(self) -> PushStatus:
         if not self.sender.available():
@@ -431,6 +465,15 @@ class WebPush:
         for device in devices:
             dedup = f"{item.id}:{device.id}"
             if not session.scalar(select(PushDelivery.id).where(PushDelivery.dedup_key == dedup)):
+                # A stale retry must not overwrite a newer description for this tag.
+                for older in session.scalars(
+                    select(PushDelivery).where(
+                        PushDelivery.device_id == device.id,
+                        PushDelivery.tag == tag,
+                        PushDelivery.status == "queued",
+                    )
+                ):
+                    older.status, older.safe_error = "expired", "REPLACED_BY_UPDATE"
                 session.add(
                     PushDelivery(
                         id=str(uuid4()),
@@ -500,13 +543,23 @@ class WebPush:
                     return
                 delivery.status, delivery.attempt = "sending", delivery.attempt + 1
                 session.commit()
+                preview = bool(rule and rule.values.get("include_thumbnail"))
+                face_update = bool(parent and parent.kind == "faces")
+                body = delivery.body
+                if rule and rule.values["privacy_mode"] != "descriptive":
+                    body = "New camera activity. Open Porchlight to review the recording."
             payload = json.dumps(
                 {
                     "event_id": delivery.event_id,
                     "title": "Porchlight activity" if delivery.event_id else "Porchlight test",
-                    "body": delivery.body[:500],
+                    "body": body[:500],
                     "tag": delivery.tag,
                     "expires_at": delivery.expires_at,
+                    "thumbnail": preview,
+                    "silent": bool(parent and parent.kind != "initial"),
+                    "update_only": face_update,
+                    "delivery_id": delivery.id,
+                    "issued_at": datetime.fromisoformat(delivery.created_at).timestamp(),
                 },
                 separators=(",", ":"),
             )
@@ -550,11 +603,18 @@ class WebPush:
                     )
                 session.commit()
 
+    def notify_work(self) -> None:
+        self.wake.set()
+
     async def run(self) -> None:
         while True:
+            self.wake.clear()
             self.last_tick = time.time()
             try:
                 await local_work(self.dispatch)
             except Exception:
                 logging.getLogger("porchlight").error('{"event":"push_worker_retry"}')
-            await asyncio.sleep(2)
+            try:
+                await asyncio.wait_for(self.wake.wait(), 2)
+            except TimeoutError:
+                pass

@@ -107,6 +107,10 @@
                 "parked",
                 "placing_object",
                 "picking_up_object",
+                "opening_door",
+                "closing_door",
+                "entering_doorway",
+                "exiting_doorway",
                 "unknown"
               ]
             },
@@ -134,6 +138,52 @@
             "minItems": 1,
             "maxItems": 12,
             "uniqueItems": true
+          },
+          "action_evidence": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "opening_door": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^f[0-9]{3}$"
+                },
+                "minItems": 2,
+                "maxItems": 12,
+                "uniqueItems": true
+              },
+              "closing_door": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^f[0-9]{3}$"
+                },
+                "minItems": 2,
+                "maxItems": 12,
+                "uniqueItems": true
+              },
+              "entering_doorway": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^f[0-9]{3}$"
+                },
+                "minItems": 2,
+                "maxItems": 12,
+                "uniqueItems": true
+              },
+              "exiting_doorway": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^f[0-9]{3}$"
+                },
+                "minItems": 2,
+                "maxItems": 12,
+                "uniqueItems": true
+              }
+            }
           }
         },
         "required": [

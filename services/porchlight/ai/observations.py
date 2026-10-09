@@ -33,7 +33,12 @@ TEMPORAL = {
     "parked",
     "placing_object",
     "picking_up_object",
+    "opening_door",
+    "closing_door",
+    "entering_doorway",
+    "exiting_doorway",
 }
+DOOR_ACTIONS = {"opening_door", "closing_door", "entering_doorway", "exiting_doorway"}
 
 VALIDATION_REASONS = {
     "json_invalid",
@@ -131,6 +136,44 @@ def validate_observation(content: str, frames: list[Frame]) -> tuple[dict[str, A
             elif not any(action in TEMPORAL for action in entity["actions"]):
                 entity["direction"] = "unknown"
             category = entity["category"]
+            action_evidence = entity.get("action_evidence", {})
+            for action in set(entity["actions"]) & DOOR_ACTIONS:
+                ids = action_evidence.get(action, [])
+                evidence = [lookup[identifier] for identifier in ids]
+                supported = (
+                    category == "person"
+                    and len(evidence) >= 2
+                    and set(ids).issubset(entity["evidence_frame_ids"])
+                    and [f.offset_ms for f in evidence] == sorted(f.offset_ms for f in evidence)
+                    and any(
+                        not similar(a.signature, b.signature)
+                        for a in evidence
+                        for b in evidence
+                        if a.offset_ms < b.offset_ms
+                    )
+                )
+                if not supported:
+                    entity["actions"].remove(action)
+                    action_evidence.pop(action, None)
+                    limitations.append("A door action lacked distinct chronological evidence.")
+            actions_set = set(entity["actions"])
+            if {"opening_door", "closing_door"} <= actions_set or {
+                "entering_doorway",
+                "exiting_doorway",
+            } <= actions_set:
+                entity["actions"] = [a for a in entity["actions"] if a not in DOOR_ACTIONS]
+                entity["action_evidence"] = {}
+                limitations.append("An ambiguous door sequence was described conservatively.")
+            if not entity["actions"]:
+                entity["actions"] = ["visible"]
+            if "action_evidence" in entity:
+                entity["action_evidence"] = {
+                    action: ids
+                    for action, ids in action_evidence.items()
+                    if action in entity["actions"]
+                }
+            if not any(action in TEMPORAL for action in entity["actions"]):
+                entity["direction"] = "unknown"
             subtype = entity["subtype"]
             if subtype and subtype not in SUBTYPES.get(category, set()):
                 raise ValueError("Inconsistent subtype")
@@ -152,7 +195,23 @@ def validate_observation(content: str, frames: list[Frame]) -> tuple[dict[str, A
             prefix = "An" if label[0].lower() in "aeiou" else "A"
             actions = entity["actions"]
             verb = (
-                "passes"
+                "opens the door and exits through the doorway"
+                if {"opening_door", "exiting_doorway"} <= set(actions)
+                else "opens the door and enters through the doorway"
+                if {"opening_door", "entering_doorway"} <= set(actions)
+                else "exits through the doorway"
+                if "exiting_doorway" in actions
+                else "enters through the doorway"
+                if "entering_doorway" in actions
+                else "opens the door"
+                if "opening_door" in actions
+                else "closes the door"
+                if "closing_door" in actions
+                else "places an object"
+                if category == "person" and "placing_object" in actions
+                else "picks up an object"
+                if category == "person" and "picking_up_object" in actions
+                else "passes"
                 if "passing" in actions
                 else "approaches"
                 if "approaching" in actions

@@ -37,6 +37,7 @@ class Config(BaseSettings):
     ollama_url: str = "http://127.0.0.1:11434"
     dev_frontend: bool = False
     public_origin: str | None = None
+    cloud_poll_seconds: int = Field(default=60, ge=30, le=3600)
     ffmpeg: Path | None = None
     ffprobe: Path | None = None
     face_model: Path = Path(

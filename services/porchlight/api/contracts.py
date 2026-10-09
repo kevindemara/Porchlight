@@ -64,6 +64,21 @@ class PushDeviceView(Contract):
     created_at: str
 
 
+class PushReceipt(Contract):
+    worker_version: Literal["previews-v2"]
+    outcome: Literal["submitted", "failed", "superseded", "dismissed"]
+    preview: Literal[
+        "not_requested",
+        "ready",
+        "unauthorized",
+        "timeout",
+        "unreachable",
+        "invalid",
+        "display_rejected",
+    ]
+    descriptive: bool
+
+
 class PushDeliveryView(Contract):
     id: str
     device_id: str
@@ -71,6 +86,7 @@ class PushDeliveryView(Contract):
     status: str
     created_at: str
     safe_error: str | None
+    browser_receipt: PushReceipt | None = None
 
 
 class PushStatus(Contract):
@@ -235,6 +251,10 @@ Action = Literal[
     "parked",
     "placing_object",
     "picking_up_object",
+    "opening_door",
+    "closing_door",
+    "entering_doorway",
+    "exiting_doorway",
     "unknown",
 ]
 
@@ -618,6 +638,7 @@ class HistoryControl(Contract):
 class RecordingSync(Contract):
     enabled: bool = False
     source: Literal["blink_cloud", "blink_local"] = "blink_cloud"
+    poll_interval_seconds: int = Field(default=60, ge=30, le=3600)
     discovered: int = 0
     archived: int = 0
     pending: int = 0

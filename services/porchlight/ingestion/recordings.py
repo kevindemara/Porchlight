@@ -55,6 +55,7 @@ class Recordings:
     ):
         self.config, self.db, self.provider, self.importer = config, db, provider, importer
         self.source_type = source_type
+        self.poll_interval = config.cloud_poll_seconds if source_type == "blink_cloud" else 120
         self.on_archived = on_archived
         self.wake = asyncio.Event()
         # The caller owns the exclusive process/profile lock; no former worker remains alive.
@@ -69,6 +70,23 @@ class Recordings:
                 # It was already due before interruption. A corrected wall clock must
                 # not turn its old availability into a new wait. Queued backoff stays intact.
                 job.available_at = min(job.available_at, time.time())
+            # Apply a shorter configured routine interval after restart without
+            # accelerating retries, historical work or another source's jobs.
+            for job in session.scalars(
+                select(Job).where(
+                    Job.type == "blink_discover",
+                    Job.status == "queued",
+                    Job.attempt == 0,
+                    Job.safe_error.is_(None),
+                )
+            ):
+                if job.payload.get("source_type", "blink_cloud") != source_type:
+                    continue
+                scan = session.get(RecordingScan, job.payload.get("source_id"))
+                if scan and scan.enabled and scan.checked_at is not None:
+                    job.available_at = min(
+                        job.available_at, max(time.time(), scan.checked_at + self.poll_interval)
+                    )
             session.commit()
 
     def source(self) -> str | None:
@@ -81,13 +99,17 @@ class Recordings:
         source = self.source()
         if source is None:
             return RecordingSync(
-                source=self.source_type, message="Connect Blink before syncing recordings."
+                source=self.source_type,
+                poll_interval_seconds=self.poll_interval,
+                message="Connect Blink before syncing recordings.",
             )
         with self.db.session() as db:
             scan = db.get(RecordingScan, source)
             if scan is None:
                 return RecordingSync(
-                    source=self.source_type, message="Recording discovery has not started."
+                    source=self.source_type,
+                    poll_interval_seconds=self.poll_interval,
+                    message="Recording discovery has not started.",
                 )
             settings = db.get(SettingsRow, 1)
             entitlement = (
@@ -118,6 +140,7 @@ class Recordings:
                 )
             return RecordingSync(
                 source=self.source_type,
+                poll_interval_seconds=self.poll_interval,
                 enabled=scan.enabled,
                 history=history_view(db, source),
                 discovered=sum(states.values()),
@@ -175,7 +198,7 @@ class Recordings:
                 job.status, job.attempt, job.available_at, job.safe_error = (
                     "queued",
                     0,
-                    max(now, (scan.checked_at or 0) + 120),
+                    max(now, (scan.checked_at or 0) + self.poll_interval),
                     None,
                 )
             if enabled:
@@ -500,10 +523,11 @@ class Recordings:
                             else "pending"
                         )
             elif job.type in {"blink_discover", "blink_history"}:
+                interval = self.poll_interval if job.type == "blink_discover" else 120
                 job.status, job.attempt, job.available_at, job.safe_error = (
                     "queued",
                     0,
-                    time.time() + 120 + random.uniform(0, 10),
+                    time.time() + interval + random.uniform(0, min(10, interval / 12)),
                     None,
                 )
                 if job.type == "blink_history":

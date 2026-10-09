@@ -1477,6 +1477,10 @@
                     "parked",
                     "placing_object",
                     "picking_up_object",
+                    "opening_door",
+                    "closing_door",
+                    "entering_doorway",
+                    "exiting_doorway",
                     "unknown"
                   ],
                   "type": "string"
@@ -1790,6 +1794,49 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PushStatus"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/push/deliveries/{delivery_id}/receipt": {
+      "post": {
+        "summary": "Push Receipt",
+        "operationId": "push_receipt_api_v1_push_deliveries__delivery_id__receipt_post",
+        "parameters": [
+          {
+            "name": "delivery_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Delivery Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PushReceipt"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -2410,6 +2457,10 @@
                     "parked",
                     "placing_object",
                     "picking_up_object",
+                    "opening_door",
+                    "closing_door",
+                    "entering_doorway",
+                    "exiting_doorway",
                     "unknown"
                   ],
                   "type": "string"
@@ -2708,6 +2759,44 @@
               "type": "string",
               "format": "uuid",
               "title": "Asset Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/events/{event_id}/notification-thumbnail": {
+      "get": {
+        "summary": "Notification Thumbnail",
+        "operationId": "notification_thumbnail_api_v1_events__event_id__notification_thumbnail_get",
+        "parameters": [
+          {
+            "name": "event_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Event Id"
             }
           }
         ],
@@ -5373,6 +5462,10 @@
                   "parked",
                   "placing_object",
                   "picking_up_object",
+                  "opening_door",
+                  "closing_door",
+                  "entering_doorway",
+                  "exiting_doorway",
                   "unknown"
                 ]
               },
@@ -7185,6 +7278,10 @@
                 "parked",
                 "placing_object",
                 "picking_up_object",
+                "opening_door",
+                "closing_door",
+                "entering_doorway",
+                "exiting_doorway",
                 "unknown"
               ]
             },
@@ -7337,6 +7434,16 @@
               }
             ],
             "title": "Safe Error"
+          },
+          "browser_receipt": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PushReceipt"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "additionalProperties": false,
@@ -7429,6 +7536,51 @@
           "keys"
         ],
         "title": "PushPairRequest"
+      },
+      "PushReceipt": {
+        "properties": {
+          "worker_version": {
+            "type": "string",
+            "const": "previews-v2",
+            "title": "Worker Version"
+          },
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "submitted",
+              "failed",
+              "superseded",
+              "dismissed"
+            ],
+            "title": "Outcome"
+          },
+          "preview": {
+            "type": "string",
+            "enum": [
+              "not_requested",
+              "ready",
+              "unauthorized",
+              "timeout",
+              "unreachable",
+              "invalid",
+              "display_rejected"
+            ],
+            "title": "Preview"
+          },
+          "descriptive": {
+            "type": "boolean",
+            "title": "Descriptive"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "worker_version",
+          "outcome",
+          "preview",
+          "descriptive"
+        ],
+        "title": "PushReceipt"
       },
       "PushStatus": {
         "properties": {
@@ -7604,6 +7756,13 @@
             ],
             "title": "Source",
             "default": "blink_cloud"
+          },
+          "poll_interval_seconds": {
+            "type": "integer",
+            "maximum": 3600.0,
+            "minimum": 30.0,
+            "title": "Poll Interval Seconds",
+            "default": 60
           },
           "discovered": {
             "type": "integer",

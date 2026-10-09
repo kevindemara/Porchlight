@@ -58,6 +58,13 @@ def main() -> None:
     outputs: list[Path] = []
     for name, source, filters in (
         ("porchlight-mark-v4.png", logo, "scale=256:256:flags=lanczos,format=rgba"),
+        # Android masks the small notification badge: keep the owner's alpha
+        # silhouette, with white RGB and no background at four-times density.
+        (
+            "porchlight-badge-v4-96.png",
+            logo,
+            "scale=96:96:flags=lanczos,format=rgba,lutrgb=r=255:g=255:b=255",
+        ),
         *(
             (f"porchlight-v4-{size}.png", icon, f"scale={size}:{size}:flags=lanczos,format=rgb24")
             for size in (16, 32, 48, 180, 192, 512)

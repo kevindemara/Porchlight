@@ -123,6 +123,10 @@
         "descriptive"
       ]
     },
+    "include_thumbnail": {
+      "type": "boolean",
+      "default": false
+    },
     "schedule": {
       "type": "object",
       "additionalProperties": false,

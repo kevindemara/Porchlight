@@ -34,6 +34,7 @@ def test_native_encryption_round_trip_without_network(monkeypatch: pytest.Monkey
         assert b"Synthetic encrypted test" not in values["data"]
         assert values["headers"]["TTL"] == "60"
         assert values["headers"]["Topic"] == "synthetic-topic"
+        assert values["headers"]["Urgency"] == "high"
         assert "Authorization" in values["headers"]
         return httpx.Response(201, request=httpx.Request("POST", url))
 

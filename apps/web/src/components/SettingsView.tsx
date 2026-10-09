@@ -7,6 +7,7 @@ import { LocalRecordingSetup } from './LocalRecordingSetup'
 import StorageSettings from './StorageSettings'
 import SetupGuide from './SetupGuide'
 import NotificationsPage from './NotificationsPage'
+import InstallApp from './InstallApp'
 
 const sections = [{ id: 'cameras', label: 'Cameras & recording' }, { id: 'ai', label: 'AI' }, { id: 'storage', label: 'Storage' }, { id: 'notifications', label: 'Notifications' }, { id: 'appearance', label: 'Appearance' }, { id: 'diagnostics', label: 'Diagnostics' }] as const
 type Section = typeof sections[number]['id']
@@ -135,8 +136,8 @@ export default function SettingsView({ settings, health, onSaved, focused, camer
     </div>
     {!focused && <><div id="settings-notifications" hidden={active !== 'notifications'} className="settings-content">
       <a className="text-link" href="#notifications">Open notification inbox</a>
+      <InstallApp />
       <NotificationsPage mode="settings" timezone={settings.timezone} cameras={cameras} />
-      <details className="panel archive-filters"><summary>Use Porchlight on your phone</summary><p className="helper">Open your approved HTTPS address on your phone and use Install app or Add to home screen. The PC must stay awake. Pair and test notifications on the actual phone; private recordings are not cached offline.</p></details>
     </div><div id="settings-appearance" hidden={active !== 'appearance'} className="settings-content">
 <section className="panel settings-section">
       <div className="section-heading"><ShieldCheck size={22} /><div><h2>Workspace</h2><p>Time and appearance for this installation.</p></div></div>

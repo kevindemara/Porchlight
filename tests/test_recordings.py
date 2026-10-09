@@ -290,6 +290,72 @@ def test_leases_pause_restart_and_server_retry_after(
     assert retry_delay("900") == 900
 
 
+def test_faster_cloud_poll_reschedules_only_healthy_discovery_on_restart(
+    recording_service: tuple[Recordings, Database, SyntheticProvider], config: Config
+) -> None:
+    service, db, provider = recording_service
+    now = time.time()
+    with db.session() as session:
+        scan = session.get(RecordingScan, provider.recording_source_id)
+        scan.checked_at = now
+        job = session.scalar(select(Job).where(Job.type == "blink_discover"))
+        job.available_at = now + 120
+        session.commit()
+    faster = Recordings(
+        config.model_copy(update={"cloud_poll_seconds": 30}), db, provider, service.importer
+    )
+    assert faster.view().poll_interval_seconds == 30
+    with db.session() as session:
+        job = session.scalar(select(Job).where(Job.type == "blink_discover"))
+        assert job.available_at == now + 30
+        job.available_at, job.safe_error, job.attempt = now + 900, "BLINK_RATE_LIMITED", 1
+        session.commit()
+    Recordings(config.model_copy(update={"cloud_poll_seconds": 30}), db, provider, service.importer)
+    with db.session() as session:
+        job = session.scalar(select(Job).where(Job.type == "blink_discover"))
+        assert job.available_at == now + 900 and job.safe_error == "BLINK_RATE_LIMITED"
+
+
+@pytest.mark.parametrize("source_type, expected", [("blink_cloud", 30), ("blink_local", 120)])
+def test_successful_poll_uses_configured_cloud_interval_but_preserves_error_backoff(
+    recording_service: tuple[Recordings, Database, SyntheticProvider],
+    config: Config,
+    monkeypatch: pytest.MonkeyPatch,
+    source_type: str,
+    expected: int,
+) -> None:
+    service, db, provider = recording_service
+    config = config.model_copy(update={"cloud_poll_seconds": 30})
+    worker = Recordings(config, db, provider, service.importer, source_type=source_type)
+    with db.session() as session:
+        job = session.scalar(select(Job).where(Job.type == "blink_discover"))
+        job.payload = {**job.payload, "source_type": source_type}
+        session.commit()
+    provider.page_count = 0
+    now = time.time() + 1
+    monkeypatch.setattr("porchlight.ingestion.recordings.time", SimpleNamespace(time=lambda: now))
+    monkeypatch.setattr("porchlight.ingestion.recordings.random.uniform", lambda _a, b: b)
+    claimed = worker.claim()
+    assert claimed
+    asyncio.run(worker.execute(claimed))
+    with db.session() as session:
+        job = session.get(Job, claimed.id)
+        assert job.available_at == now + expected + min(10, expected / 12)
+        job.available_at = now
+        session.commit()
+
+    async def failed(_: str) -> None:
+        raise ApiError(429, "BLINK_RATE_LIMITED", "Synthetic rate limit.", True, 900)
+
+    monkeypatch.setattr(worker, "discover", failed)
+    claimed = worker.claim()
+    assert claimed
+    asyncio.run(worker.execute(claimed))
+    with db.session() as session:
+        job = session.get(Job, claimed.id)
+        assert job.available_at >= now + 900 and job.safe_error == "BLINK_RATE_LIMITED"
+
+
 @pytest.mark.parametrize("clock_shift", [-3600, 3600])
 def test_restart_after_clock_change_recovers_claimed_work_but_keeps_backoff(
     recording_service: tuple[Recordings, Database, SyntheticProvider],

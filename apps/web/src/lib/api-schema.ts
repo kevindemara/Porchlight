@@ -690,6 +690,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/push/deliveries/{delivery_id}/receipt": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Push Receipt */
+        post: operations["push_receipt_api_v1_push_deliveries__delivery_id__receipt_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/push/devices": {
         parameters: {
             query?: never;
@@ -926,6 +943,23 @@ export interface paths {
         };
         /** Media */
         get: operations["media_api_v1_media__asset_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/events/{event_id}/notification-thumbnail": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Notification Thumbnail */
+        get: operations["notification_thumbnail_api_v1_events__event_id__notification_thumbnail_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2030,7 +2064,7 @@ export interface components {
             /** Direction */
             direction?: ("left_to_right" | "right_to_left" | "toward_camera" | "away_from_camera" | "stationary" | "unknown") | null;
             /** Action */
-            action?: ("visible" | "moving" | "passing" | "approaching" | "departing" | "stopping" | "parked" | "placing_object" | "picking_up_object" | "unknown") | null;
+            action?: ("visible" | "moving" | "passing" | "approaching" | "departing" | "stopping" | "parked" | "placing_object" | "picking_up_object" | "opening_door" | "closing_door" | "entering_doorway" | "exiting_doorway" | "unknown") | null;
             /** Source */
             source?: ("blink_cloud" | "blink_local" | "manual_import" | "live_recording" | "live_snapshot" | "live_capture") | null;
             /**
@@ -2628,7 +2662,7 @@ export interface components {
              *       "visible"
              *     ]
              */
-            actions: ("visible" | "moving" | "passing" | "approaching" | "departing" | "stopping" | "parked" | "placing_object" | "picking_up_object" | "unknown")[];
+            actions: ("visible" | "moving" | "passing" | "approaching" | "departing" | "stopping" | "parked" | "placing_object" | "picking_up_object" | "opening_door" | "closing_door" | "entering_doorway" | "exiting_doorway" | "unknown")[];
             /**
              * Direction
              * @default unknown
@@ -2687,6 +2721,7 @@ export interface components {
             created_at: string;
             /** Safe Error */
             safe_error: string | null;
+            browser_receipt?: components["schemas"]["PushReceipt"] | null;
         };
         /** PushDeviceView */
         PushDeviceView: {
@@ -2713,6 +2748,26 @@ export interface components {
             /** Endpoint */
             endpoint: string;
             keys: components["schemas"]["PushKeys"];
+        };
+        /** PushReceipt */
+        PushReceipt: {
+            /**
+             * Worker Version
+             * @constant
+             */
+            worker_version: "previews-v2";
+            /**
+             * Outcome
+             * @enum {string}
+             */
+            outcome: "submitted" | "failed" | "superseded" | "dismissed";
+            /**
+             * Preview
+             * @enum {string}
+             */
+            preview: "not_requested" | "ready" | "unauthorized" | "timeout" | "unreachable" | "invalid" | "display_rejected";
+            /** Descriptive */
+            descriptive: boolean;
         };
         /** PushStatus */
         PushStatus: {
@@ -2784,6 +2839,11 @@ export interface components {
              * @enum {string}
              */
             source: "blink_cloud" | "blink_local";
+            /**
+             * Poll Interval Seconds
+             * @default 60
+             */
+            poll_interval_seconds: number;
             /**
              * Discovered
              * @default 0
@@ -4120,7 +4180,7 @@ export interface operations {
                 category?: ("person" | "vehicle" | "animal" | "package" | "other" | "unknown") | null;
                 color?: ("black" | "white" | "gray" | "silver" | "blue" | "red" | "green" | "yellow" | "orange" | "brown" | "beige" | "other") | null;
                 direction?: ("left_to_right" | "right_to_left" | "toward_camera" | "away_from_camera" | "stationary" | "unknown") | null;
-                action?: ("visible" | "moving" | "passing" | "approaching" | "departing" | "stopping" | "parked" | "placing_object" | "picking_up_object" | "unknown") | null;
+                action?: ("visible" | "moving" | "passing" | "approaching" | "departing" | "stopping" | "parked" | "placing_object" | "picking_up_object" | "opening_door" | "closing_door" | "entering_doorway" | "exiting_doorway" | "unknown") | null;
                 source?: ("blink_cloud" | "blink_local" | "manual_import" | "live_recording" | "live_snapshot" | "live_capture") | null;
                 include_captures?: boolean;
                 media_kind?: "all" | "recordings" | "snapshots";
@@ -4286,6 +4346,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PushStatus"];
+                };
+            };
+        };
+    };
+    push_receipt_api_v1_push_deliveries__delivery_id__receipt_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                delivery_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PushReceipt"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -4654,7 +4747,7 @@ export interface operations {
                 category?: ("person" | "vehicle" | "animal" | "package" | "other" | "unknown") | null;
                 color?: ("black" | "white" | "gray" | "silver" | "blue" | "red" | "green" | "yellow" | "orange" | "brown" | "beige" | "other") | null;
                 direction?: ("left_to_right" | "right_to_left" | "toward_camera" | "away_from_camera" | "stationary" | "unknown") | null;
-                action?: ("visible" | "moving" | "passing" | "approaching" | "departing" | "stopping" | "parked" | "placing_object" | "picking_up_object" | "unknown") | null;
+                action?: ("visible" | "moving" | "passing" | "approaching" | "departing" | "stopping" | "parked" | "placing_object" | "picking_up_object" | "opening_door" | "closing_door" | "entering_doorway" | "exiting_doorway" | "unknown") | null;
                 source?: ("blink_cloud" | "blink_local" | "manual_import" | "live_recording" | "live_snapshot" | "live_capture") | null;
                 include_captures?: boolean;
                 media_kind?: "all" | "recordings" | "snapshots";
@@ -4787,6 +4880,37 @@ export interface operations {
             header?: never;
             path: {
                 asset_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    notification_thumbnail_api_v1_events__event_id__notification_thumbnail_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
             };
             cookie?: never;
         };

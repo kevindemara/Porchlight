@@ -5,13 +5,14 @@ import hashlib
 import json
 import logging
 import time
+from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
 from uuid import uuid4
 
 from sqlalchemy import func, select
 
-from porchlight.ai.frames import EXTRACTION_VERSION, extract_frames
+from porchlight.ai.frames import EXTRACTION_VERSION, REVIEWABLE_EXTRACTIONS, extract_frames
 from porchlight.ai.observations import CONTRACT_DIGEST, ObservationError, validate_observation
 from porchlight.ai.ollama import Ollama
 from porchlight.ai.workloads import WORKLOAD_VERSION, Workload
@@ -46,6 +47,7 @@ class AnalysisPipeline:
         self.config, self.db, self.ollama = config, db, ollama
         self.wake = asyncio.Event()
         self.schedule_wake = asyncio.Event()
+        self.on_completed: Callable[[], None] | None = None
         with db.session() as session:
             for job in session.scalars(
                 select(Job).where(Job.type == "ai_analyze", Job.status == "running")
@@ -158,7 +160,7 @@ class AnalysisPipeline:
                     evidence_frames=[
                         EvidenceFrame(frame_id=frame["frame_id"], offset_ms=frame["offset_ms"])
                         for frame in row.frames
-                        if frame.get("extraction_version") == EXTRACTION_VERSION
+                        if frame.get("extraction_version") in REVIEWABLE_EXTRACTIONS
                     ],
                     scene_visibility=row.observation["scene_visibility"],
                 )
@@ -445,6 +447,8 @@ class AnalysisPipeline:
         try:
             async with asyncio.timeout(210):
                 await self.analyze_job(claimed)
+                if claimed.payload.get("automatic") and self.on_completed:
+                    self.on_completed()
         except ApiError as exc:
             error = exc
         except Exception:

@@ -4,6 +4,7 @@ import asyncio
 import json
 import logging
 import time
+from collections.abc import Callable
 from datetime import UTC, datetime
 from typing import Any
 from uuid import uuid4
@@ -16,6 +17,7 @@ from sqlalchemy.orm import Session
 
 from porchlight.api.contracts import ApiError, InboxItem, InboxView, RuleView
 from porchlight.config import ROOT
+from porchlight.faces.descriptions import FaceDescription, personalize_summary
 from porchlight.push import WebPush
 from porchlight.storage.database import Database
 from porchlight.storage.models import (
@@ -137,9 +139,53 @@ def plan_notifications(db: Session, event: Event, *, analyzed: bool = False) -> 
                 )
 
 
+def plan_face_notification_update(db: Session, event: Event) -> None:
+    """Refresh only already-dispatched descriptive alerts, never create a new alert."""
+    if event.historical or event.analysis_status != "analyzed":
+        return
+    for prior in db.scalars(
+        select(NotificationOutbox).where(
+            NotificationOutbox.event_id == event.id,
+            NotificationOutbox.kind == "analysis",
+            NotificationOutbox.status.in_(["transport_accepted", "fanout_queued"]),
+            NotificationOutbox.expires_at > time.time(),
+        )
+    ):
+        rule = db.get(NotificationRule, prior.rule_id)
+        key = f"{event.id}:{prior.rule_id}:{prior.channel}:faces"
+        if (
+            not rule
+            or not rule.values["enabled"]
+            or rule.values["privacy_mode"] != "descriptive"
+            or db.scalar(select(NotificationOutbox.id).where(NotificationOutbox.dedup_key == key))
+        ):
+            continue
+        db.add(
+            NotificationOutbox(
+                id=str(uuid4()),
+                event_id=event.id,
+                rule_id=prior.rule_id,
+                channel=prior.channel,
+                kind="faces",
+                dedup_key=key,
+                status="queued",
+                available_at=time.time(),
+                expires_at=prior.expires_at,
+                attempt=0,
+            )
+        )
+
+
 class Notifications:
-    def __init__(self, db: Database, push: WebPush | None = None):
+    def __init__(
+        self,
+        db: Database,
+        push: WebPush | None = None,
+        face_contexts: Callable[[list[str]], dict[str, FaceDescription]] | None = None,
+    ):
         self.db, self.push = db, push
+        self.face_contexts = face_contexts
+        self.wake = asyncio.Event()
 
     def rules(self) -> list[RuleView]:
         with self.db.session() as db:
@@ -301,7 +347,7 @@ class Notifications:
                         .order_by(Analysis.revision.desc())
                         .limit(1)
                     )
-                    if item.kind == "analysis"
+                    if item.kind != "initial"
                     else None
                 )
                 if not matches(rule, observation):
@@ -312,11 +358,25 @@ class Notifications:
                 body = (
                     event.summary
                     if rule["privacy_mode"] == "descriptive"
-                    and item.kind == "analysis"
+                    and item.kind != "initial"
                     and match_kind(rule, observation) == "known"
                     and event.summary
                     else "New camera activity. Open Porchlight to review the recording."
                 )
+                if body == event.summary and self.face_contexts:
+                    context = self.face_contexts([event.id]).get(event.id, FaceDescription())
+                    body = personalize_summary(body, context) or body
+                if item.kind == "faces" and body == event.summary:
+                    item.status = "expired"
+                    continue
+                if (
+                    item.kind == "faces"
+                    and item.channel == "in_app"
+                    and existing
+                    and existing.body == body
+                ):
+                    item.status = "transport_accepted"
+                    continue
                 if item.channel == "web_push" and self.push:
                     self.push.fanout(db, item, body)
                     continue
@@ -355,11 +415,20 @@ class Notifications:
                 item.status = "transport_accepted"
             db.commit()
 
+    def notify_work(self) -> None:
+        self.wake.set()
+
     async def run(self) -> None:
         while True:
+            self.wake.clear()
             self.last_tick = time.time()
             try:
                 await local_work(self.dispatch)
+                if self.push:
+                    self.push.notify_work()
             except Exception:
                 logging.getLogger("porchlight").error('{"event":"notification_worker_retry"}')
-            await asyncio.sleep(2)
+            try:
+                await asyncio.wait_for(self.wake.wait(), 2)
+            except TimeoutError:
+                pass

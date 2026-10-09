@@ -64,6 +64,7 @@ from porchlight.api.contracts import (
     ModelTestResult,
     OwnerEntity,
     PushPairRequest,
+    PushReceipt,
     PushStatus,
     RecordingControl,
     RecordingSync,
@@ -140,7 +141,9 @@ logger = logging.getLogger("porchlight")
 
 def error_response(error: ApiError) -> JSONResponse:
     retry_after = int(error.retry_after or 60)
-    headers = {"Retry-After": str(retry_after)} if error.status == 429 else {}
+    headers = {"Cache-Control": "no-store"}
+    if error.status == 429:
+        headers["Retry-After"] = str(retry_after)
     return JSONResponse(
         status_code=error.status,
         headers=headers,
@@ -165,6 +168,16 @@ class BoundaryMiddleware(BaseHTTPMiddleware):
                 ApiError(400, "HOST_REJECTED", "Use the local Porchlight address.")
             )
         origin = request.headers.get("origin")
+        # The HTML shell contains no account data. Installed launchers and
+        # service-worker fetches need not preserve document-navigation metadata.
+        # Exempt only GETs to these two public paths, retaining framing denial
+        # and every origin/auth/CSRF check for API, media and state changes.
+        public_shell = (
+            request.method == "GET"
+            and request.url.path in {"/", "/index.html"}
+            and request.headers.get("sec-fetch-dest")
+            not in {"frame", "iframe", "fencedframe", "object", "embed"}
+        )
         remote = bool(
             self.config.public_origin
             and request.headers.get("host", "").lower()
@@ -183,17 +196,17 @@ class BoundaryMiddleware(BaseHTTPMiddleware):
                 return error_response(
                     ApiError(403, "HTTPS_REQUIRED", "Use HTTPS for remote access.")
                 )
-            if origin is not None and origin != self.config.public_origin:
+            if origin is not None and origin != self.config.public_origin and not public_shell:
                 return error_response(ApiError(403, "ORIGIN_REJECTED", "Open Porchlight directly."))
             if request.url.path in {"/api/v1/setup/bootstrap", "/api/v1/setup/claim"}:
                 return error_response(
                     ApiError(403, "LOCAL_SETUP_ONLY", "Complete owner setup locally.")
                 )
-        if origin is not None and origin not in self.config.allowed_origins:
+        if origin is not None and origin not in self.config.allowed_origins and not public_shell:
             return error_response(
                 ApiError(403, "ORIGIN_REJECTED", "This origin cannot access Porchlight.")
             )
-        if request.headers.get("sec-fetch-site") == "cross-site":
+        if request.headers.get("sec-fetch-site") == "cross-site" and not public_shell:
             return error_response(ApiError(403, "ORIGIN_REJECTED", "Open Porchlight directly."))
         if (
             request.method not in {"GET", "HEAD", "OPTIONS"}
@@ -298,7 +311,11 @@ def create_app(config: Config | None = None) -> FastAPI:
             app.state.faces = FacePipeline(config, db)
             app.state.evidence = Evidence(config, db)
             app.state.push = WebPush(config, db, WindowsVault(config.data_root, "push"))
-            app.state.notifications = Notifications(db, app.state.push)
+            app.state.notifications = Notifications(
+                db, app.state.push, app.state.faces.description_contexts
+            )
+            app.state.analysis.on_completed = app.state.notifications.notify_work
+            app.state.faces.on_completed = app.state.notifications.notify_work
             app.state.importer = Importer(config, db)
             app.state.importer.recover()
             app.state.heartbeat = datetime.now(UTC).isoformat()
@@ -316,6 +333,7 @@ def create_app(config: Config | None = None) -> FastAPI:
             def recording_archived() -> None:
                 app.state.analysis.notify_recording()
                 app.state.faces.notify_recording()
+                app.state.notifications.notify_work()
 
             recordings = Recordings(
                 config,
@@ -1018,6 +1036,12 @@ def create_app(config: Config | None = None) -> FastAPI:
             raise ApiError(403, "LOCAL_SETUP_REQUIRED", "Create push keys from the PC's local app.")
         return cast(PushStatus, await local_work(app.state.push.configure))
 
+    @app.post("/api/v1/push/deliveries/{delivery_id}/receipt", status_code=204)
+    async def push_receipt(delivery_id: UUID, body: PushReceipt, request: Request) -> Response:
+        app.state.auth.require(request, csrf=True)
+        await local_work(lambda: app.state.push.receipt(str(delivery_id), body))
+        return Response(status_code=204)
+
     @app.post("/api/v1/push/devices", response_model=PushStatus, status_code=201)
     async def pair_push(body: PushPairRequest, request: Request) -> PushStatus:
         app.state.auth.require(request, csrf=True)
@@ -1216,6 +1240,19 @@ def create_app(config: Config | None = None) -> FastAPI:
             )
 
     thumbnails = Thumbnails(config)
+
+    @app.get("/api/v1/events/{event_id}/notification-thumbnail")
+    async def notification_thumbnail(event_id: UUID, request: Request) -> Response:
+        app.state.auth.require(request)
+        with app.state.db.session() as db:
+            event = db.get(Event, str(event_id))
+            asset = db.get(MediaAsset, event.media_id) if event and event.media_id else None
+            if asset is None:
+                raise ApiError(404, "MEDIA_NOT_FOUND", "This recording is unavailable.")
+            path = (config.data_root / asset.relative_path).resolve()
+            asset_id, media_type = asset.id, asset.media_type
+        image = await thumbnails.get(path, asset_id, media_type)
+        return Response(image, media_type="image/jpeg", headers={"Cache-Control": "no-store"})
 
     @app.get("/api/v1/media/{asset_id}/thumbnail")
     async def thumbnail(asset_id: UUID, request: Request) -> Response:
@@ -1616,6 +1653,7 @@ def create_app(config: Config | None = None) -> FastAPI:
             "sw.js": "text/javascript",
             "favicon-v4.ico": "image/x-icon",
             "icons/porchlight-mark-v4.png": "image/png",
+            "icons/porchlight-badge-v4-96.png": "image/png",
             "icons/porchlight-v4-16.png": "image/png",
             "icons/porchlight-v4-32.png": "image/png",
             "icons/porchlight-v4-48.png": "image/png",
