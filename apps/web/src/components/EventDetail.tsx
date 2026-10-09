@@ -77,9 +77,11 @@ export function EventDetail({ event, timezone, aiReady, onClose, onSaved }: {
   return <dialog ref={dialog} onCancel={onClose} className="event-dialog" aria-labelledby="event-title">
     <div className="dialog-heading"><div><span className="eyebrow">{sourceLabel(event)}</span><h2 id="event-title">Recording details</h2></div>
       <button className="icon-button" aria-label="Close recording" onClick={onClose}><X /></button></div>
-    {image ? <img className="detail-image" src={`/api/v1/media/${event.media_id}`} alt="Imported image" /> : <video ref={video} controls muted preload="metadata" src={`/api/v1/media/${event.media_id}`} />}
+    {image ? <img className="detail-image" src={`/api/v1/media/${event.media_id}`} alt="Imported image" /> : <video ref={video} controls preload="metadata" src={`/api/v1/media/${event.media_id}`} />}
     <div className="detail-body">
-      <p>{current.summary ?? 'This recording has not been analyzed.'}{!!current.recognized_people?.length && ` Possible face match: ${current.recognized_people.join(', ')}.`}</p>
+      <p>{current.summary ?? 'This recording has not been analyzed.'}</p>
+      {!!current.recognized_people?.length && <p className="helper">Possible face match: {current.recognized_people.join(', ')}.</p>}
+      {!!current.recognized_people?.length && current.ai_summary && current.summary !== current.ai_summary && !current.corrected_summary && current.labels_source !== 'owner' && <details><summary>Original AI description</summary><p>{current.ai_summary}</p></details>}
       {(current.corrected_summary || current.labels_source === 'owner') && <p className="helper">Your description. Original AI description: {current.ai_summary ?? 'Not available'}</p>}
       <dl><dt>Recorded</dt><dd>{event.captured_at ? new Date(event.captured_at).toLocaleString(undefined, { timeZone: timezone }) : 'Unknown · recording time was not supplied'}</dd>
         <dt>{event.source_type === 'manual_import' ? 'Imported' : 'Discovered'}</dt><dd>{new Date(event.discovered_at).toLocaleString(undefined, { timeZone: timezone })}</dd>

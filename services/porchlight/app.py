@@ -21,6 +21,7 @@ from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoin
 from starlette.staticfiles import StaticFiles
 
 from porchlight import __version__
+from porchlight.activity import capture_event, timeline_rows
 from porchlight.ai.evidence import Evidence
 from porchlight.ai.ollama import Ollama
 from porchlight.ai.pipeline import AnalysisPipeline
@@ -81,7 +82,7 @@ from porchlight.api.contracts import (
     SetupState,
     SnoozeRequest,
 )
-from porchlight.catalog import Archive, after_cursor, event_query
+from porchlight.catalog import Archive, event_query
 from porchlight.changes import StateChanges
 from porchlight.config import Config
 from porchlight.controls import CameraControls
@@ -101,6 +102,7 @@ from porchlight.faces.contracts import (
     PersonProfiles,
     PersonRename,
 )
+from porchlight.faces.descriptions import FaceDescription, personalize_summary
 from porchlight.faces.pipeline import FacePipeline
 from porchlight.healthchecks import checks as independent_checks
 from porchlight.ingestion.imports import Importer
@@ -488,8 +490,19 @@ def create_app(config: Config | None = None) -> FastAPI:
         event: Event,
         asset: MediaAsset,
         categories: list[str] | None = None,
-        recognized_people: list[str] | None = None,
+        face_description: FaceDescription | None = None,
     ) -> EventView:
+        if face_description is None:
+            face_description = app.state.faces.description_contexts([event.id]).get(
+                event.id, FaceDescription()
+            )
+        summary = event.corrected_summary or event.labels_summary or event.summary
+        if (
+            not event.corrected_summary
+            and not event.labels_summary
+            and event.corrected_entities is None
+        ):
+            summary = personalize_summary(summary, face_description)
         return EventView(
             id=event.id,
             source_type=event.source_type,
@@ -498,7 +511,7 @@ def create_app(config: Config | None = None) -> FastAPI:
             timestamp_quality=event.timestamp_quality,
             media_id=event.media_id,
             analysis_status=event.analysis_status,
-            summary=event.corrected_summary or event.labels_summary or event.summary,
+            summary=summary,
             corrected_summary=event.corrected_summary,
             ai_summary=event.summary,
             corrected_entities=[
@@ -523,9 +536,7 @@ def create_app(config: Config | None = None) -> FastAPI:
             object_categories=categories
             if categories is not None
             else object_categories([event.id]).get(event.id, []),
-            recognized_people=recognized_people
-            if recognized_people is not None
-            else app.state.faces.names_for_events([event.id]).get(event.id, []),
+            recognized_people=list(face_description.names),
         )
 
     @app.get("/health/live")
@@ -951,23 +962,30 @@ def create_app(config: Config | None = None) -> FastAPI:
     def list_events(request: Request, filters: Annotated[EventFilters, Query()]) -> EventList:
         app.state.auth.require(request)
         with app.state.db.session() as db:
-            statement = event_query(filters, settings().timezone)
-            event_time = func.coalesce(Event.captured_at, Event.discovered_at)
-            if filters.cursor:
-                after = db.get(Event, filters.cursor)
-                if after is None:
-                    raise ApiError(422, "INVALID_CURSOR", "Refresh the event list.")
-                statement = after_cursor(statement, after)
-            rows = db.execute(
-                statement.order_by(event_time.desc(), Event.id.desc()).limit(31)
-            ).all()
-            categories = object_categories([event.id for event, _ in rows[:30]])
-            recognized = app.state.faces.names_for_events([event.id for event, _ in rows[:30]])
+            rows = timeline_rows(db, filters, settings().timezone)
+            ids = [row[0].id for row in rows[:30] if not isinstance(row, Capture)]
+            categories = object_categories(ids)
+            recognized = app.state.faces.description_contexts(ids)
             items = [
-                event_view(event, asset, categories.get(event.id, []), recognized.get(event.id, []))
-                for event, asset in rows[:30]
+                capture_event(row)
+                if isinstance(row, Capture)
+                else event_view(
+                    row[0],
+                    row[1],
+                    categories.get(row[0].id, []),
+                    recognized.get(row[0].id, FaceDescription()),
+                )
+                for row in rows[:30]
             ]
-            return EventList(items=items, next_cursor=items[-1].id if len(rows) > 30 else None)
+            cursor = None
+            if len(rows) > 30:
+                last = items[-1]
+                cursor = (
+                    f"{'c' if last.capture else 'e'}:{last.id}"
+                    if filters.include_captures
+                    else last.id
+                )
+            return EventList(items=items, next_cursor=cursor)
 
     @app.post("/api/v1/search/interpret", response_model=SearchPreview)
     async def search_interpret(body: SearchRequest, request: Request) -> SearchPreview:
@@ -1546,7 +1564,16 @@ def create_app(config: Config | None = None) -> FastAPI:
         if request.headers.get("range"):
             raise ApiError(400, "LIVE_RANGE_REJECTED", "Live video does not support seeking.")
         current.attached = True
-        return StreamingResponse(app.state.live.media(current), media_type="video/mp4")
+        try:
+            await asyncio.wait_for(current.initialized.wait(), 25)
+        except TimeoutError:
+            await app.state.live.stop(current.id, current.actor)
+            raise ApiError(503, "LIVE_NO_VIDEO", "No video arrived from the camera.") from None
+        if not current.fragments.initialized:
+            raise ApiError(410, "LIVE_ENDED", "This live session has ended.")
+        return StreamingResponse(
+            app.state.live.media(current), media_type=app.state.live.view(current).mime_type
+        )
 
     @app.post("/api/v1/integrations/blink/sync", response_model=RecordingSync, status_code=202)
     def recording_control(body: RecordingControl, request: Request) -> RecordingSync:
@@ -1587,6 +1614,15 @@ def create_app(config: Config | None = None) -> FastAPI:
         public_files = {
             "manifest.webmanifest": "application/manifest+json",
             "sw.js": "text/javascript",
+            "favicon-v4.ico": "image/x-icon",
+            "icons/porchlight-mark-v4.png": "image/png",
+            "icons/porchlight-v4-16.png": "image/png",
+            "icons/porchlight-v4-32.png": "image/png",
+            "icons/porchlight-v4-48.png": "image/png",
+            "icons/porchlight-v4-180.png": "image/png",
+            "icons/porchlight-v4-192.png": "image/png",
+            "icons/porchlight-v4-512.png": "image/png",
+            "icons/porchlight-v4-maskable-512.png": "image/png",
             "icons/porchlight-192.png": "image/png",
             "icons/porchlight-512.png": "image/png",
             "icons/porchlight-mark-v3.png": "image/png",

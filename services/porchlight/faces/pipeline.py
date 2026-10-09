@@ -33,13 +33,21 @@ from porchlight.faces.contracts import (
     PersonProfile,
     SavedFacePerson,
 )
+from porchlight.faces.descriptions import FaceDescription, description_context
 from porchlight.faces.detector import MANIFEST, POLICY, check_runtime, sample_offsets
 from porchlight.faces.gallery import GalleryItem, group_faces, suggest_face
 from porchlight.faces.people import People
 from porchlight.faces.recognizer import MANIFEST as RECOGNIZER_MANIFEST
 from porchlight.faces.recognizer import Recognizer, check_recognizer, feature_for_box, rank_profiles
 from porchlight.storage.database import Database
-from porchlight.storage.models import Event, FaceDetection, IntegrationState, Job, MediaAsset
+from porchlight.storage.models import (
+    Analysis,
+    Event,
+    FaceDetection,
+    IntegrationState,
+    Job,
+    MediaAsset,
+)
 
 logger = logging.getLogger("porchlight")
 
@@ -242,11 +250,32 @@ class FacePipeline:
 
     def names_for_events(self, event_ids: list[str]) -> dict[str, list[str]]:
         """Resolve saved matches at read time so renames and removals stay current."""
+        return {
+            key: list(value.names)
+            for key, value in self.description_contexts(event_ids).items()
+            if value.names
+        }
+
+    def description_contexts(self, event_ids: list[str]) -> dict[str, FaceDescription]:
+        """Batch lightweight report/analysis metadata; no media or inference on reads."""
         if not event_ids:
             return {}
         with self.db.session() as session:
-            rows = session.scalars(
-                select(FaceDetection).where(FaceDetection.event_id.in_(event_ids))
+            latest = (
+                select(Analysis.event_id, func.max(Analysis.revision).label("revision"))
+                .where(Analysis.event_id.in_(event_ids))
+                .group_by(Analysis.event_id)
+                .subquery()
+            )
+            rows = session.execute(
+                select(FaceDetection, Analysis)
+                .outerjoin(latest, FaceDetection.event_id == latest.c.event_id)
+                .outerjoin(
+                    Analysis,
+                    (Analysis.event_id == latest.c.event_id)
+                    & (Analysis.revision == latest.c.revision),
+                )
+                .where(FaceDetection.event_id.in_(event_ids))
             ).all()
         if not rows:
             return {}
@@ -254,17 +283,14 @@ class FacePipeline:
             names = self.people.names()
         except ApiError:
             return {}
-        found: dict[str, list[str]] = {}
-        for row in rows:
+        found: dict[str, FaceDescription] = {}
+        for row, analysis in rows:
             report = FaceReport.model_validate(row.report)
-            matched = {
-                names[str(face.profile_id)]
-                for frame in report.frames
-                for face in frame.faces
-                if face.profile_id and str(face.profile_id) in names
-            }
-            if matched:
-                found[row.event_id] = sorted(matched, key=str.casefold)
+            person_count = sum(
+                entity.get("category") == "person"
+                for entity in analysis.observation.get("entities", [])
+            ) if analysis else 0
+            found[row.event_id] = description_context(report, names, person_count)
         return found
 
     def candidates(self) -> FaceCandidates:

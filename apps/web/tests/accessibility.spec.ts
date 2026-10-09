@@ -3,7 +3,7 @@ import { enterWorkspace } from './session'
 
 test('keyboard skip link focuses the current page without changing its route or filters', async ({ page }) => {
   await enterWorkspace(page)
-  for (const name of ['Activity', 'Search', 'Settings', 'Library', 'Live view', 'Cameras']) {
+  for (const name of ['Activity', 'Settings', 'Live View']) {
     const link = page.getByRole('navigation', { name: 'Main navigation' }).getByRole('link', { name, exact: true })
     await link.click()
     await expect(link).toHaveAttribute('aria-current', 'page')

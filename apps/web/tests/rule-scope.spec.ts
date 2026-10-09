@@ -10,6 +10,7 @@ test('rule scope saves several cameras and object values and preserves removed c
   await page.route('**/api/v1/cameras', route => route.fulfill({ json: { items: current } }))
   await enterWorkspace(page)
   await page.getByRole('link', { name: 'Notifications', exact: true }).click()
+  await page.getByRole('link', { name: 'Notification settings', exact: true }).click()
   await page.getByLabel('Rule name', { exact: true }).fill('Synthetic multiple object rule')
   const scope = page.locator('.rule-scope')
   await scope.getByText('Cameras: All cameras', { exact: true }).click()

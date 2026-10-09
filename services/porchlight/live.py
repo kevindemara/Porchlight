@@ -30,10 +30,12 @@ class Session:
     bytes_received: int = 0
     certificate_sha256: str | None = None
     attached: bool = False
+    closing: bool = False
     queue: asyncio.Queue[bytes | None] = field(default_factory=lambda: asyncio.Queue(8))
     task: asyncio.Task[None] | None = None
     camera_name: str = "Camera"
     fragments: Fragments = field(default_factory=Fragments)
+    initialized: asyncio.Event = field(default_factory=asyncio.Event)
     recording_id: str | None = None
     last_snapshot: float = 0.0
 
@@ -45,7 +47,6 @@ class LiveViews:
         self.config, self.provider = config, provider
         self.session: Session | None = None
         self.lock = asyncio.Lock()
-        self.last_start = 0.0
         self.session_valid: Callable[[str], bool] = lambda _: True
         self.library = library
 
@@ -55,12 +56,14 @@ class LiveViews:
                 self.session.state not in {"ended", "failed"}
                 or (self.session.task and not self.session.task.done())
             ):
-                raise ApiError(409, "LIVE_BUSY", "A live session is already open. Close it first.")
-            if time.monotonic() - self.last_start < 60:
-                raise ApiError(429, "LIVE_COOLDOWN", "Wait a minute between live sessions.", True)
+                message = (
+                    "The previous live session is still closing. Try again shortly."
+                    if self.session.state in {"ended", "failed"}
+                    else "A live session is already open. Close it first."
+                )
+                raise ApiError(409, "LIVE_BUSY", message)
             if not self.config.tool_path("ffmpeg"):
                 raise ApiError(409, "MEDIA_TOOLS_REQUIRED", "Configure FFmpeg before live view.")
-            self.last_start = time.monotonic()
             current = Session(
                 id=str(uuid4()), camera_id=camera_id, actor=actor, camera_name=camera_name
             )
@@ -91,6 +94,18 @@ class LiveViews:
             expires_at=datetime.fromtimestamp(current.expires, UTC).isoformat(),
             bytes_received=current.bytes_received,
             media_age_seconds=age,
+            mime_type=(
+                'video/mp4; codecs="avc1.42E01E,mp4a.40.2"'
+                if current.fragments.has_audio
+                else 'video/mp4; codecs="avc1.42E01E"'
+            ),
+            audio_status=(
+                "checking"
+                if current.fragments.has_audio is None
+                else "available"
+                if current.fragments.has_audio
+                else "unavailable"
+            ),
             certificate_sha256=current.certificate_sha256,
             recording=self.library.get(current.recording_id)
             if self.library and current.recording_id
@@ -158,9 +173,10 @@ class LiveViews:
             if not current:
                 return
             if current.task and not current.task.done():
-                current.task.cancel()
+                if not current.closing:
+                    current.task.cancel()
                 with suppress(asyncio.CancelledError):
-                    await current.task
+                    await asyncio.shield(current.task)
             if current.state != "failed":
                 current.state, current.message = "ended", "Live view ended."
 
@@ -208,7 +224,20 @@ class LiveViews:
                     "pipe:0",
                     "-map",
                     "0:v:0",
-                    "-an",
+                    "-map",
+                    "0:a:0?",
+                    "-c:a",
+                    "aac",
+                    "-profile:a",
+                    "aac_low",
+                    "-ar",
+                    "16000",
+                    "-ac",
+                    "1",
+                    "-b:a",
+                    "64k",
+                    "-map_metadata",
+                    "-1",
                     "-vf",
                     "scale=960:540:force_original_aspect_ratio=decrease:force_divisible_by=2",
                     "-c:v",
@@ -274,19 +303,20 @@ class LiveViews:
                         )
                     current.last_media = time.monotonic()
                     current.state, current.message = "receiving", "Video is arriving."
-                    if self.library:
-                        try:
-                            fragments = current.fragments.feed(data)
-                            if current.recording_id:
-                                for started, fragment in fragments:
-                                    self.library.write(current.recording_id, fragment, started)
-                        except ValueError:
-                            current.fragments = Fragments()
-                            if current.recording_id:
-                                self.library.fail(
-                                    current.recording_id,
-                                    "The live recording format could not be captured.",
-                                )
+                    try:
+                        fragments = current.fragments.feed(data)
+                        if current.fragments.initialized:
+                            current.initialized.set()
+                        if self.library and current.recording_id:
+                            for started, fragment in fragments:
+                                self.library.write(current.recording_id, fragment, started)
+                    except ValueError:
+                        current.fragments = Fragments()
+                        if self.library and current.recording_id:
+                            self.library.fail(
+                                current.recording_id,
+                                "The live recording format could not be captured.",
+                            )
                     await asyncio.wait_for(current.queue.put(data), 5)
 
             async def watchdog() -> None:
@@ -329,6 +359,8 @@ class LiveViews:
                 "Live view could not complete. Try again later.",
             )
         finally:
+            current.closing = True
+            current.initialized.set()
             for task in tasks:
                 task.cancel()
             for task in tasks:
@@ -342,10 +374,11 @@ class LiveViews:
                     process.stdin.close()
                 if process.returncode is None:
                     with suppress(TimeoutError):
-                        await asyncio.wait_for(process.wait(), 2)
+                        # Drain stdout while waiting: wait() alone can deadlock on a full pipe.
+                        await asyncio.wait_for(process.communicate(), 2)
                 if process.returncode is None:
                     process.kill()  # Only this owned child; never an unrelated PID.
-                    await process.wait()
+                    await process.communicate()
             while current.queue.full():
                 current.queue.get_nowait()
             current.queue.put_nowait(None)

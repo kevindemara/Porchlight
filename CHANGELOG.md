@@ -1,5 +1,58 @@
 # Changelog
 
+## Camera audio listening and recordings · 2026-10-08
+
+- Preserve available camera audio in live playback and newly saved live recordings using the existing local encoder. Keep playback muted initially, with accessible Unmute/Mute and volume controls in normal and fullscreen view.
+- Declare actual video/audio codecs from the encoded header; cameras without an audio track retain video playback. Muting listening does not remove recorded sound. Imported clips keep original audio, and manual saved-video playback no longer starts forced-muted. Snapshots are unchanged; two-way talk is unsupported.
+
+## Contextual live playback control · 2026-10-08
+
+- Hide Play while live video is playing. Show it only when an active session has loaded video that is paused or needs a user gesture to play, including fullscreen; resuming playback does not create another Blink session.
+
+## Compact Settings toolbar · 2026-10-08
+
+- Move Review setup / Open setup guide alongside the section buttons, removing its separate upper row. Keep the action aligned right and allow wrapping on smaller screens.
+
+## Live reconnect cleanup · 2026-10-08
+
+- Remove Porchlight's fixed one-minute live-session cooldown at the owner's request. Reconnect still waits for local cleanup, permits one session and retains actual Blink throttling responses.
+- Avoid interrupting cleanup already in progress and drain the owned encoder's output during shutdown so a full pipe cannot hang reconnect.
+- Log only the stop request's HTTP status, including empty response bodies and unconfirmed stops; add a bounded two-connection diagnostic with local cleanup timings. Immediate native reconnect remains unverified: the first session supplied video, the second supplied none, and Blink returned HTTP 404 to the library's stop endpoint.
+
+## Owner-provided Porchlight branding · 2026-10-08
+
+- Use the new transparent logomark throughout the interface and the dark-background artwork for favicons, installation and notification icons.
+- Generate compressed 256 px logo, 16/32/48 px favicons, 180 px Apple touch icon and 192/512 px PWA icons, including a maskable variant. Preserve source masters and provide a repeatable FFmpeg export script.
+
+## More room for camera content · 2026-10-08
+
+- Remove the workspace top bar and its redundant tagline/status badge. Put Notifications and Sign out above the desktop sidebar's Local workspace badge; on phones, keep compact actions beside the page title.
+- Remove the Experimental live view label from the player heading, keeping the camera name and actual session status.
+- Add an orange play button in the idle player that uses the existing start action and loading state; retain Start live view below it.
+- Remove the YOUR WORKSPACE eyebrow from all authenticated page headings and reclaim its spacing.
+
+## Compact network controls in Live View · 2026-10-08
+
+- Replace the full-width network arming panel with a state-bearing button beside Manage cameras, opening a keyboard-accessible modal.
+- Preserve network-wide disable confirmation, pending/unknown outcomes and Blink read-back. Escape/Close returns focus and clears an unsubmitted confirmation without affecting live view.
+
+## Unified Activity and simpler navigation · 2026-10-08
+
+- Bring saved live recordings and snapshots into Activity with All / Recordings / Snapshots, distinct source labels, shared filters and global newest-first pagination. Preserve existing protected capture playback, downloads, favourites and deletion.
+- Reduce primary navigation to Live View, Activity, Faces and Settings. Add Manage cameras to Live View while keeping observed network status and arm/disarm readily accessible; preserve old Cameras/Library links.
+- Organize Settings into Cameras & recording, AI, Storage, Notifications, Appearance and Diagnostics, retaining drafts between sections. Replace the prominent setup panel with a small setup/review action.
+- Make the bell an inbox, with push pairing and rule management in Settings → Notifications and shortcuts in both directions.
+
+## Compact Activity search tools · 2026-10-08
+
+- Merge AI-assisted Search into Activity and remove the separate Search navigation item. Preserve older Search bookmarks, saved views and recording links.
+- Replace tall filter/digest/saved-view disclosures with a compact toolbar, one expanded panel at a time, visible removable filter chips and retained drafts. Keep text search and Favourites visible; editing a field preserves other accepted filters.
+
+## Navigation and named Activity descriptions · 2026-10-08
+
+- Reorder desktop and phone navigation to Live View, Activity, Cameras, Library, Search, Faces and Settings.
+- Use the saved person's name in single-person Activity descriptions when local face results are unambiguous. Preserve owner corrections, generic uncertain/multiple-person descriptions and the original AI text; resolve profile renames/removal at read time.
+
 ## Every saved face profile on first load · 2026-10-08
 
 - Show every saved person on the Faces page immediately, with up to three representative labeled crops from the saved scan library. Older-scan pagination now adds review detections without hiding names that occur only in older recordings.

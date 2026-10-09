@@ -36,6 +36,7 @@ test('guided setup preserves unavailable states and saves only explicit storage 
   await page.screenshot({ path: testInfo.outputPath('setup-review.png'), fullPage: true })
   await page.getByRole('button', { name: 'Return to Settings', exact: true }).click()
   await expect(page.getByRole('button', { name: 'Open setup guide', exact: true })).toBeFocused()
+  await page.getByRole('button', { name: 'Storage', exact: true }).click()
   await expect(page.getByLabel('Archive budget (GiB)')).toHaveValue(String(initial.archive_budget_gib + 1))
   await page.getByLabel('Archive budget (GiB)').fill(String(initial.archive_budget_gib))
   await page.getByRole('button', { name: 'Save settings', exact: true }).click()

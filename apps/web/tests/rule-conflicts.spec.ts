@@ -4,6 +4,7 @@ import { enterWorkspace } from './session'
 test('rule edit and deletion conflicts preserve drafts until explicit saved-version review', async ({ page }, info) => {
   await enterWorkspace(page)
   await page.getByRole('link', { name: 'Notifications', exact: true }).click()
+  await page.getByRole('link', { name: 'Notification settings', exact: true }).click()
   await page.getByLabel('Rule name', { exact: true }).fill('Synthetic conflict rule')
   await page.getByRole('button', { name: 'Save rule', exact: true }).click()
   await expect(page.getByText('Rule saved.', { exact: true })).toBeVisible()

@@ -8,7 +8,7 @@ The app is a runnable local development build. Automated fixtures establish code
 | Sync Module retrieval | Separate gated manifest/prepared-transfer candidate | New compatible module, active removable storage, three fresh no-plan clips plus a fourth after restart; card/ID reuse |
 | Local AI | Existing native vision model, validated observations, manual/automatic queues | Owner accuracy review and labelled holdout; sampled frames can miss brief activity; uncertainty is not proof of truth |
 | Camera controls | Explicit arm/motion commands with pending/unknown/read-back | Real model-specific hardware writes require owner acceptance |
-| Live/Library | Experimental bounded video-only relay, Record/Snapshot, protected saved captures | Real browser playback/capture/reconnect; no two-way audio or continuous recording |
+| Live/Library | Experimental bounded relay with optional camera audio, Record/Snapshot, protected saved captures | Current relay AAC track verified natively; real audible browser/device playback and reliable immediate reconnect remain unverified; no two-way talk or continuous recording |
 | Phone | Installable shell, exact-origin proxy boundary, optional Web Push implementation | Optional encryption installation approval, native encryption test, HTTPS route and Android closed/locked-screen Wi-Fi/cellular tests |
 | Operations | Retention preview, backups/verified restore, redacted diagnostics, dependency audit | Soak, Windows sleep/resume, unavailable volume recovery, owner release acceptance |
 

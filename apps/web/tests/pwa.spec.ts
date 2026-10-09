@@ -2,6 +2,26 @@ import { test, expect } from '@playwright/test'
 
 test('browser shell has an install manifest and shows honest offline state without private caches', async ({ page, context }) => {
   await page.goto('/')
+  const favicon = await page.request.get('/favicon-v4.ico')
+  expect(favicon.ok()).toBe(true)
+  expect(favicon.headers()['content-type']).toContain('image/x-icon')
+  const ico = await favicon.body()
+  expect(ico.readUInt16LE(2)).toBe(1)
+  expect(ico.readUInt16LE(4)).toBe(3)
+  for (const entry of [0, 1, 2]) {
+    const offset = ico.readUInt32LE(6 + entry * 16 + 12)
+    expect(ico.subarray(offset + 1, offset + 4).toString()).toBe('PNG')
+  }
+  for (const icon of await page.locator('link[rel="icon"], link[rel="apple-touch-icon"]').all()) {
+    const response = await page.request.get((await icon.getAttribute('href'))!)
+    expect(response.ok()).toBe(true)
+    expect(response.headers()['content-type']).toMatch(/image\//)
+  }
+  const mark = await page.request.get('/icons/porchlight-mark-v4.png')
+  expect(mark.ok()).toBe(true)
+  const markBytes = await mark.body()
+  expect(markBytes.readUInt32BE(16)).toBe(256)
+  expect(markBytes[25]).toBe(6) // RGBA PNG preserves the owner-provided transparency.
   const manifest = await (await page.request.get('/manifest.webmanifest')).json()
   expect(manifest.name).toBe('Porchlight')
   expect(manifest.display).toBe('standalone')

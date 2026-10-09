@@ -299,6 +299,7 @@ class EventView(Contract):
     favourite: bool
     note: str
     duration_seconds: float
+    capture: CaptureView | None = None
     camera_id: str | None = None
     corrected_summary: str | None = None
     ai_summary: str | None = None
@@ -335,7 +336,19 @@ class EventFilters(Contract):
     color: Color | None = None
     direction: Direction | None = None
     action: Action | None = None
-    source: Literal["blink_cloud", "blink_local", "manual_import"] | None = None
+    source: (
+        Literal[
+            "blink_cloud",
+            "blink_local",
+            "manual_import",
+            "live_recording",
+            "live_snapshot",
+            "live_capture",
+        ]
+        | None
+    ) = None
+    include_captures: bool = False
+    media_kind: Literal["all", "recordings", "snapshots"] = "all"
     analysis: (
         Literal["not_analyzed", "queued", "analyzing", "analyzed", "analysis_failed"] | None
     ) = None
@@ -556,7 +569,8 @@ class LiveSession(Contract):
     state: Literal["starting", "receiving", "stalled", "ended", "failed"]
     message: str
     expires_at: str
-    mime_type: str = 'video/mp4; codecs="avc1.42E01E"'
+    mime_type: str = 'video/mp4; codecs="avc1.42E01E,mp4a.40.2"'
+    audio_status: Literal["checking", "available", "unavailable"] = "checking"
     bytes_received: int = 0
     media_age_seconds: float | None = None
     certificate_sha256: str | None = None

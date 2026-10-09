@@ -5,6 +5,8 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import ipaddress
+import json
+import logging
 import socket
 import ssl
 from contextlib import suppress
@@ -15,6 +17,8 @@ from blinkpy import api
 from blinkpy.livestream import BlinkLiveStream
 
 from porchlight.api.contracts import ApiError, RelayTrustRequired
+
+logger = logging.getLogger(__name__)
 
 
 def blink_dns(name: str) -> bool:
@@ -218,10 +222,28 @@ class BlinkLiveInput:
         for task in self.tasks:
             with suppress(asyncio.CancelledError, Exception):
                 await task
-        with suppress(Exception):
+        try:
             async with asyncio.timeout(3), self.lock:
-                await api.request_command_done(
-                    self.stream.camera.sync.blink,
-                    self.stream.camera.network_id,
-                    self.stream.command_id,
+                blink = self.stream.camera.sync.blink
+                # Same upstream command-done endpoint, accepting an empty response body.
+                response = await api.http_post(
+                    blink,
+                    f"{blink.urls.base_url}/network/{self.stream.camera.network_id}"
+                    f"/command/{self.stream.command_id}/done/",
+                    json=False,
                 )
+            code = getattr(response, "status", None)
+            if response is not None:
+                response.release()
+            logger.log(
+                logging.INFO if isinstance(code, int) and 200 <= code < 300 else logging.WARNING,
+                json.dumps(
+                    {
+                        "event": "blink_live_stop_response",
+                        "response_received": response is not None,
+                        "http_status": code if isinstance(code, int) else None,
+                    }
+                ),
+            )
+        except Exception:
+            logger.warning('{"event":"blink_live_stop_unconfirmed"}')

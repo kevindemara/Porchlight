@@ -20,7 +20,7 @@ self.addEventListener('push', event => {
         !Number.isFinite(payload.expires_at) || payload.expires_at * 1000 < Date.now()) return
     const id = typeof payload.event_id === 'string' && /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(payload.event_id) ? payload.event_id : null
     await self.registration.showNotification(id ? 'Porchlight activity' : 'Porchlight test', {
-      body: payload.body, tag: payload.tag, icon: '/icons/porchlight-v3-192.png',
+      body: payload.body, tag: payload.tag, icon: '/icons/porchlight-v4-192.png',
       data: { event_id: id }, renotify: false,
     })
   })())

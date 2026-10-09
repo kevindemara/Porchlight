@@ -2032,7 +2032,18 @@ export interface components {
             /** Action */
             action?: ("visible" | "moving" | "passing" | "approaching" | "departing" | "stopping" | "parked" | "placing_object" | "picking_up_object" | "unknown") | null;
             /** Source */
-            source?: ("blink_cloud" | "blink_local" | "manual_import") | null;
+            source?: ("blink_cloud" | "blink_local" | "manual_import" | "live_recording" | "live_snapshot" | "live_capture") | null;
+            /**
+             * Include Captures
+             * @default false
+             */
+            include_captures: boolean;
+            /**
+             * Media Kind
+             * @default all
+             * @enum {string}
+             */
+            media_kind: "all" | "recordings" | "snapshots";
             /** Analysis */
             analysis?: ("not_analyzed" | "queued" | "analyzing" | "analyzed" | "analysis_failed") | null;
             /** Start */
@@ -2077,6 +2088,7 @@ export interface components {
             note: string;
             /** Duration Seconds */
             duration_seconds: number;
+            capture?: components["schemas"]["CaptureView"] | null;
             /** Camera Id */
             camera_id?: string | null;
             /** Corrected Summary */
@@ -2505,9 +2517,15 @@ export interface components {
             expires_at: string;
             /**
              * Mime Type
-             * @default video/mp4; codecs="avc1.42E01E"
+             * @default video/mp4; codecs="avc1.42E01E,mp4a.40.2"
              */
             mime_type: string;
+            /**
+             * Audio Status
+             * @default checking
+             * @enum {string}
+             */
+            audio_status: "checking" | "available" | "unavailable";
             /**
              * Bytes Received
              * @default 0
@@ -4103,7 +4121,9 @@ export interface operations {
                 color?: ("black" | "white" | "gray" | "silver" | "blue" | "red" | "green" | "yellow" | "orange" | "brown" | "beige" | "other") | null;
                 direction?: ("left_to_right" | "right_to_left" | "toward_camera" | "away_from_camera" | "stationary" | "unknown") | null;
                 action?: ("visible" | "moving" | "passing" | "approaching" | "departing" | "stopping" | "parked" | "placing_object" | "picking_up_object" | "unknown") | null;
-                source?: ("blink_cloud" | "blink_local" | "manual_import") | null;
+                source?: ("blink_cloud" | "blink_local" | "manual_import" | "live_recording" | "live_snapshot" | "live_capture") | null;
+                include_captures?: boolean;
+                media_kind?: "all" | "recordings" | "snapshots";
                 analysis?: ("not_analyzed" | "queued" | "analyzing" | "analyzed" | "analysis_failed") | null;
                 start?: string | null;
                 end?: string | null;
@@ -4635,7 +4655,9 @@ export interface operations {
                 color?: ("black" | "white" | "gray" | "silver" | "blue" | "red" | "green" | "yellow" | "orange" | "brown" | "beige" | "other") | null;
                 direction?: ("left_to_right" | "right_to_left" | "toward_camera" | "away_from_camera" | "stationary" | "unknown") | null;
                 action?: ("visible" | "moving" | "passing" | "approaching" | "departing" | "stopping" | "parked" | "placing_object" | "picking_up_object" | "unknown") | null;
-                source?: ("blink_cloud" | "blink_local" | "manual_import") | null;
+                source?: ("blink_cloud" | "blink_local" | "manual_import" | "live_recording" | "live_snapshot" | "live_capture") | null;
+                include_captures?: boolean;
+                media_kind?: "all" | "recordings" | "snapshots";
                 analysis?: ("not_analyzed" | "queued" | "analyzing" | "analyzed" | "analysis_failed") | null;
                 start?: string | null;
                 end?: string | null;

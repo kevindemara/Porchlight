@@ -1,6 +1,8 @@
 # Porchlight logomark concept
 
-Current applied mark: [approved porch-lamp/lens/viewing-cone concept](concept-v3.md). The earlier P/doorway concept below was rejected and is retained only as design history.
+Current applied artwork is the owner's root-level `Porchlight-logomark-transparent.png` for the interface and `Porchlight-logomark-202B27-background.png` for app icons/favicons. Both are 800×800 source masters and remain intact. Previous generated concepts below are retained as design history.
+
+Run `.venv/Scripts/python.exe scripts/generate-app-icons.py` from the repository root to recreate the versioned exports under `apps/web/public/`. It uses the existing configured FFmpeg, Lanczos resizing, maximum lossless PNG compression and stripped ancillary metadata; no additional package is required. The transparent mark is 256×256 for existing 48/64 CSS-pixel logo placements, including high-density displays. Opaque icons are 16/32/48 (favicon), 180 (Apple touch), 192/512 (PWA), plus a padded 512 maskable icon whose artwork fits Android's central safe circle. The multi-image ICO contains 16/32/48 PNG entries. App launch colours match `#202B27`; notification icons use the same new app artwork. Versioned URLs avoid old favicon reuse. Existing installed launchers may need a reinstall to pick up their icon.
 
 `porchlight-logomark-concept-v1.png` is a transparent raster concept combining a P-shaped doorway with a hanging porch lamp and its warm beam of light.
 

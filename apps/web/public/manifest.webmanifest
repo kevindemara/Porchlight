@@ -3,15 +3,15 @@
   "name": "Porchlight",
   "short_name": "Porchlight",
   "description": "Your private camera recordings and local analysis.",
-  "start_url": "/#cameras",
+  "start_url": "/#live",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#17231e",
-  "theme_color": "#17231e",
+  "background_color": "#202b27",
+  "theme_color": "#202b27",
   "icons": [
-    { "src": "/icons/porchlight-v3-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "/icons/porchlight-v3-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "/icons/porchlight-v3-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    { "src": "/icons/porchlight-v4-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/porchlight-v4-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/porchlight-v4-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ]
 }
 

@@ -4,11 +4,11 @@ Activity sorts by recording time, with discovery time clearly marked when record
 
 Recording details show the neutral AI description, uncertainty, structured observations and sampled moments. Your description preserves the original AI revision. Camera names/groups are local metadata. Delete requires confirmation and removes local notes, analyses and pending notifications with the event. Shared bytes remain until their last reference is removed. Minimal source tombstones prevent automated re-download of locally deleted Blink clips. Blink copies and exported files remain separate.
 
-Library captures can be marked favourite, downloaded and explicitly deleted after they finish saving. Snapshots and live recordings remain separate from Activity and do not enable AI automatically.
+Live captures appear alongside archived clips in Activity with distinct source labels. Use All / Recordings / Snapshots to filter the whole timeline. Expand a finished capture to play/view it, mark it favourite, download it or explicitly delete it. Their storage contracts remain separate, and capturing does not enable AI automatically.
 
 ## Optional local cleanup
 
-Cleanup starts **off**. Settings → Local archive shows the age policy, archive budget and free-space reserve. Save settings applies budget/reserve changes. Preview local cleanup lists the eligible recording/capture counts, estimated reclaimed original bytes, favourites and active work. Choose Cancel, a one-time deletion or deletion plus automatic cleanup. The preview expires after five minutes, is single-use and must still match the archive/settings when applied.
+Cleanup starts **off**. Settings → Storage → Local archive shows the age policy, archive budget and free-space reserve. Save settings applies budget/reserve changes. Preview local cleanup lists the eligible recording/capture counts, estimated reclaimed original bytes, favourites and active work. Choose Cancel, a one-time deletion or deletion plus automatic cleanup. The preview expires after five minutes, is single-use and must still match the archive/settings when applied.
 
 Age uses the recording timestamp when available, discovery time otherwise, and saved time for Library captures. Favourites and running analysis/capture work are protected. The automatic worker processes at most 100 events and 100 captures per minute. It only runs after a confirmed policy. Pause it before changing the age policy. Restored backups always disable cleanup.
 

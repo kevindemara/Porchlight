@@ -67,14 +67,17 @@ test('local face detection: native clip, separate automatic toggle and reviewed 
     await page.route(`**/api/v1/events/${event.id}`, async route => {
       const response = await route.fetch()
       const detail = await response.json()
-      await route.fulfill({ response, json: { ...detail, summary: 'Someone visited the door.', recognized_people: ['Alex'] } })
+      await route.fulfill({ response, json: { ...detail, summary: 'Alex is visible.', ai_summary: 'A person is visible.', recognized_people: ['Alex'] } })
     })
     await page.route(`**/api/v1/events/${event.id}/analysis`, route => route.fulfill({ json: {
       revision: 1, model: 'synthetic-local-model', model_digest: 'synthetic', created_at: new Date().toISOString(),
       elapsed_seconds: 1, frame_count: 2, workload: 'balanced', uncertainty: [], entities: [],
       sample_offsets_ms: [], evidence_frames: [], scene_visibility: 'clear',
     } }))
-    await expect(page.locator('dialog').getByText('Someone visited the door. Possible face match: Alex.')).toBeVisible({ timeout: 10000 })
+    await expect(page.locator('dialog').getByText('Alex is visible.', { exact: true })).toBeVisible({ timeout: 10000 })
+    await expect(page.locator('dialog').getByText('Possible face match: Alex.', { exact: true })).toBeVisible()
+    await page.locator('dialog').getByText('Original AI description', { exact: true }).click()
+    await expect(page.locator('dialog').getByText('A person is visible.', { exact: true })).toBeVisible()
     await expect(page.locator('dialog').getByText('Local face recognition suggests Alex. Please verify against the recording.')).toBeVisible()
     await panel.getByRole('button', { name: 'Review faces at 1.9 seconds', exact: true }).click()
     await expect.poll(() => page.locator('dialog video').evaluate((video: HTMLVideoElement) => video.currentTime)).toBeCloseTo(1.88, 1)

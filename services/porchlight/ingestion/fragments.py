@@ -3,8 +3,32 @@
 from __future__ import annotations
 
 import time
+from collections.abc import Iterator
 
 MAX_BOX = 4 * 1024 * 1024
+
+
+def children(box: bytes) -> Iterator[bytes]:
+    offset = 8
+    while offset < len(box):
+        size = int.from_bytes(box[offset : offset + 4], "big")
+        if size < 8 or offset + size > len(box):
+            raise ValueError("Invalid encoder child box")
+        yield box[offset : offset + size]
+        offset += size
+
+
+def has_audio(moov: bytes) -> bool:
+    for track in children(moov):
+        if track[4:8] != b"trak":
+            continue
+        for media in children(track):
+            if media[4:8] != b"mdia":
+                continue
+            for handler in children(media):
+                if handler[4:8] == b"hdlr" and handler[16:20] == b"soun":
+                    return True
+    return False
 
 
 class Fragments:
@@ -12,6 +36,7 @@ class Fragments:
         self.buffer = bytearray()
         self.header = b""
         self.initialized = False
+        self.has_audio: bool | None = None
         self.pending = b""
         self.started = 0.0
 
@@ -32,6 +57,8 @@ class Fragments:
                     raise ValueError("Encoder header too large")
                 self.header += box
                 self.initialized = kind == b"moov" and self.header[4:8] == b"ftyp"
+                if self.initialized:
+                    self.has_audio = has_audio(box)
             elif kind == b"moof":
                 self.pending = box
                 self.started = time.monotonic()

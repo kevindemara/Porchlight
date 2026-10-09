@@ -6,6 +6,26 @@ The worker handles offline navigation with an honest server-unavailable page. It
 
 Installation does not establish background phone push. The authenticated local inbox works; optional Web Push transport, encrypted subscription storage, permission/pairing and expiry handling are implemented. Optional encryption packages await approval and native integration testing. Locked-phone/cellular tests remain NOT RUN. Follow [WEB_PUSH.md](WEB_PUSH.md) after the HTTPS origin is configured. Browser push would use the browser vendor's delivery service; private clip analysis stays on the PC. Phone delivery and phone access to a private clip are separate checks.
 
+## First Android test without a tunnel
+
+For a short owner-assisted test, Android's [ADB reverse port forwarding](https://developer.android.com/develop/ui/views/layout/webapps/access-local-server) can make the PC's existing loopback app available through a USB-connected phone. This is a proposed test route, not a measured Porchlight phone result. It requires Android platform-tools on the PC, a data-capable USB cable and explicit USB-debugging authorization on the phone. Platform-tools were not found on PATH during the 2026-10-08 review; no package was installed and no device was connected by this review.
+
+After approving/installing platform-tools and authorizing this PC on the phone, use the Android tools in a local terminal:
+
+```powershell
+adb devices  # Confirm the intended phone locally; do not share device identifiers.
+adb reverse tcp:8765 tcp:8765
+# On the phone, open http://127.0.0.1:8765 in Chrome and sign in to Porchlight.
+# When finished:
+adb reverse --remove tcp:8765
+```
+
+If more than one device is attached, target the intended phone with ADB's `-s` option. Use the built interface on 8765; leave other applications' ports alone. This path keeps Porchlight bound to loopback and needs no LAN listener, firewall rule, DNS change or certificate trust. The browser sees a loopback origin, which is a [potentially trustworthy context](https://developer.mozilla.org/en-US/docs/Web/Security/Defenses/Secure_Contexts). Check actual install availability on the phone rather than assuming it from desktop viewport tests.
+
+First verify sign-in, Activity filters and clip playback/audio, Live View unmute/fullscreen/Record/Snapshot/reconnect, page/modal sizing, Add to home screen and server-unavailable handling. Keep owner footage on the local device/browser and outside coding-tool screenshots. Unplugging or removing forwarding ends this access; it does not provide away-from-home or cellular access. Porchlight's push pairing deliberately requires its configured HTTPS origin, so USB testing does not establish push delivery or replace the later HTTPS tests.
+
+For untethered home-Wi-Fi use before Cloudflare, configure a LAN-only HTTPS reverse proxy on this PC using the exact-origin boundary below. A private hostname must resolve to the PC from the phone, and its certificate must be trusted there. [Caddy's local HTTPS](https://caddyserver.com/docs/automatic-https) is a candidate, not an installed or tested dependency. Preparing that route requires explicit owner approval before installation, certificate trust or firewall changes; the current request only reviews it. A valid LAN hostname can use the existing `public_origin` setting without making the application internet-public. Do not expose Vite or Ollama, bypass browser certificate errors, or disable Host/Origin/CSRF checks for a phone preview.
+
 ## Explicit local reverse proxy mode
 
 Default operation remains loopback-only. No tunnel, firewall rule, DNS record, software installation or certificate trust is created by Porchlight. Complete owner setup locally before configuring an external origin.

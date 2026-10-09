@@ -1498,7 +1498,10 @@
                   "enum": [
                     "blink_cloud",
                     "blink_local",
-                    "manual_import"
+                    "manual_import",
+                    "live_recording",
+                    "live_snapshot",
+                    "live_capture"
                   ],
                   "type": "string"
                 },
@@ -1507,6 +1510,31 @@
                 }
               ],
               "title": "Source"
+            }
+          },
+          {
+            "name": "include_captures",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Include Captures"
+            }
+          },
+          {
+            "name": "media_kind",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "all",
+                "recordings",
+                "snapshots"
+              ],
+              "type": "string",
+              "default": "all",
+              "title": "Media Kind"
             }
           },
           {
@@ -2403,7 +2431,10 @@
                   "enum": [
                     "blink_cloud",
                     "blink_local",
-                    "manual_import"
+                    "manual_import",
+                    "live_recording",
+                    "live_snapshot",
+                    "live_capture"
                   ],
                   "type": "string"
                 },
@@ -2412,6 +2443,31 @@
                 }
               ],
               "title": "Source"
+            }
+          },
+          {
+            "name": "include_captures",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Include Captures"
+            }
+          },
+          {
+            "name": "media_kind",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "all",
+                "recordings",
+                "snapshots"
+              ],
+              "type": "string",
+              "default": "all",
+              "title": "Media Kind"
             }
           },
           {
@@ -5333,7 +5389,10 @@
                 "enum": [
                   "blink_cloud",
                   "blink_local",
-                  "manual_import"
+                  "manual_import",
+                  "live_recording",
+                  "live_snapshot",
+                  "live_capture"
                 ]
               },
               {
@@ -5341,6 +5400,21 @@
               }
             ],
             "title": "Source"
+          },
+          "include_captures": {
+            "type": "boolean",
+            "title": "Include Captures",
+            "default": false
+          },
+          "media_kind": {
+            "type": "string",
+            "enum": [
+              "all",
+              "recordings",
+              "snapshots"
+            ],
+            "title": "Media Kind",
+            "default": "all"
           },
           "analysis": {
             "anyOf": [
@@ -5489,6 +5563,16 @@
           "duration_seconds": {
             "type": "number",
             "title": "Duration Seconds"
+          },
+          "capture": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CaptureView"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "camera_id": {
             "anyOf": [
@@ -6774,7 +6858,17 @@
           "mime_type": {
             "type": "string",
             "title": "Mime Type",
-            "default": "video/mp4; codecs=\"avc1.42E01E\""
+            "default": "video/mp4; codecs=\"avc1.42E01E,mp4a.40.2\""
+          },
+          "audio_status": {
+            "type": "string",
+            "enum": [
+              "checking",
+              "available",
+              "unavailable"
+            ],
+            "title": "Audio Status",
+            "default": "checking"
           },
           "bytes_received": {
             "type": "integer",

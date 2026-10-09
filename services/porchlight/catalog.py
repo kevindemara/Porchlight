@@ -28,6 +28,12 @@ def event_query(filters: EventFilters, timezone: str = "UTC") -> Select[Event, M
         raise ApiError(422, "INVALID_TIME_RANGE", "End time must be after start time.")
     result = select(Event, MediaAsset).join(MediaAsset, Event.media_id == MediaAsset.id)
     event_time = func.coalesce(Event.captured_at, Event.discovered_at)
+    if filters.media_kind != "all":
+        result = result.where(
+            MediaAsset.media_type == (
+                "video/mp4" if filters.media_kind == "recordings" else "image/jpeg"
+            )
+        )
     if filters.camera_ids:
         result = result.where(Event.camera_id.in_(filters.camera_ids))
     if filters.daypart != "all":

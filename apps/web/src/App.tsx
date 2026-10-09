@@ -1,28 +1,26 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Activity, Bell, Camera, Check, ChevronRight, HardDrive, Images, LogOut, ScanFace, Search, Settings as SettingsIcon, ShieldCheck, Star, Upload, Video } from 'lucide-react'
+import { Activity, Bell, HardDrive, LogOut, ScanFace, Settings as SettingsIcon, ShieldCheck, Upload, Video } from 'lucide-react'
 import BrandMark from './components/BrandMark'
 import OwnerForm from './components/OwnerForm'
 import SettingsView from './components/SettingsView'
 import { EventDetail } from './components/EventDetail'
 import LivePage from './components/LivePage'
-import CameraGroups from './components/CameraGroups'
-import LibraryPage from './components/LibraryPage'
-import ArchiveFilters, { emptyFilters, type FilterDraft } from './components/ArchiveFilters'
+import { draftFromFilters, emptyFilters, type FilterDraft } from './components/ArchiveFilters'
+import ActivityTools from './components/ActivityTools'
 import { ArchiveCoverage, ArchiveTimeline } from './components/ArchiveTimeline'
-import SearchTools from './components/SearchTools'
-import DigestPanel from './components/DigestPanel'
 import NotificationsPage from './components/NotificationsPage'
 import FacialRecognitionPage from './components/FacialRecognitionPage'
-import SavedViews from './components/SavedViews'
 import { useStateUpdates } from './lib/state-updates'
 import { api, ApiError, message, setSession, type AnalysisStatus, type CameraList, type Event, type EventFilters, type EventList, type Health, type SavedView, type Session, type Settings, type Setup } from './lib/api'
 
-type Page = 'cameras' | 'live' | 'library' | 'activity' | 'search' | 'faces' | 'settings' | 'notifications'
-const navigation = [ { id: 'cameras', label: 'Cameras', icon: Camera }, { id: 'live', label: 'Live view', icon: Video }, { id: 'library', label: 'Library', icon: Images }, { id: 'activity', label: 'Activity', icon: Activity }, { id: 'search', label: 'Search', icon: Search }, { id: 'faces', label: 'Faces', icon: ScanFace }, { id: 'settings', label: 'Settings', icon: SettingsIcon } ] as const
+type Page = 'live' | 'activity' | 'faces' | 'settings' | 'notifications'
+const navigation = [ { id: 'live', label: 'Live View', icon: Video }, { id: 'activity', label: 'Activity', icon: Activity }, { id: 'faces', label: 'Faces', icon: ScanFace }, { id: 'settings', label: 'Settings', icon: SettingsIcon } ] as const
 
 function currentPage(): Page {
   const id = location.hash.slice(1).split('?')[0]
-  return id === 'notifications' || navigation.some(page => page.id === id) ? id as Page : 'cameras'
+  if (id === 'search' || id === 'library') return 'activity'
+  if (id === 'cameras') return 'live'
+  return id === 'notifications' || navigation.some(page => page.id === id) ? id as Page : 'live'
 }
 
 function routeId(key: string): string | null {
@@ -45,6 +43,7 @@ export default function App() {
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null)
   const [query, setQuery] = useState('')
   const [favourites, setFavourites] = useState(false)
+  const [mediaKind, setMediaKind] = useState<'all' | 'recordings' | 'snapshots'>('all')
   const [filters, setFilters] = useState<FilterDraft>(emptyFilters)
   const [interpreted, setInterpreted] = useState<EventFilters | null>(null)
   const [viewId, setViewId] = useState(() => routeId('view'))
@@ -80,7 +79,7 @@ export default function App() {
   }, [session, acceptSession])
   useEffect(() => { void refresh() }, [refresh])
   useEffect(() => {
-    if (!session || (page !== 'cameras' && page !== 'live')) return
+    if (!session || page !== 'live') return
     let active = true
     let pending = false
     const update = async () => {
@@ -98,7 +97,16 @@ export default function App() {
     return () => { active = false; window.clearInterval(timer) }
   }, [session, page, acceptSession])
   useEffect(() => {
-    const onHash = () => { setPage(currentPage()); setViewId(routeId('view')); setEventId(routeId('event')); setSelectedEvent(null); setFeedback('') }
+    const onHash = () => {
+      const legacy = location.hash.slice(1).split('?')[0]
+      if (['search', 'library', 'cameras'].includes(legacy)) {
+        const params = new URLSearchParams(location.hash.split('?')[1] ?? '')
+        if (legacy === 'cameras') params.set('manage', '1')
+        history.replaceState(null, '', `#${legacy === 'cameras' ? 'live' : 'activity'}${params.size ? `?${params}` : ''}`)
+      }
+      setPage(currentPage()); setViewId(routeId('view')); setEventId(routeId('event')); setSelectedEvent(previous => previous?.id === routeId('event') ? previous : null); setFeedback('')
+    }
+    onHash()
     window.addEventListener('hashchange', onHash)
     return () => window.removeEventListener('hashchange', onHash)
   }, [])
@@ -107,7 +115,7 @@ export default function App() {
     const controller = new AbortController()
     void api<SavedView>(`/saved-views/${viewId}`, { signal: controller.signal }).then(view => {
       if (controller.signal.aborted) return
-      setInterpreted(view.filters); setFilters(emptyFilters); setQuery(view.filters.query ?? ''); setFavourites(view.filters.favourites ?? false)
+      setInterpreted(view.filters); setFilters(emptyFilters); setQuery(view.filters.query ?? ''); setFavourites(view.filters.favourites ?? false); setMediaKind(view.filters.media_kind ?? 'all')
     }).catch(error => { if (!controller.signal.aborted) setFeedback(message(error)) })
     return () => controller.abort()
   }, [session, viewId])
@@ -136,8 +144,9 @@ export default function App() {
       for (const [key, value] of Object.entries(filters)) {
         if (value) params.set(key, key === 'start' || key === 'end' ? new Date(value).toISOString() : value)
       }
+      params.set('include_captures', 'true'); params.set('media_kind', mediaKind)
       return params
-  }, [query, favourites, filters, interpreted])
+  }, [query, favourites, filters, interpreted, mediaKind])
   const loadEvents = useCallback(async (cursor?: string) => {
     const sequence = ++eventRequest.current
     setBusy('events')
@@ -146,7 +155,7 @@ export default function App() {
       if (cursor) params.set('cursor', cursor)
       const data = await api<EventList>(`/events?${params}`)
       if (sequence !== eventRequest.current) return
-      setEvents(previous => cursor ? [...previous, ...data.items.filter(item => !previous.some(event => event.id === item.id))] : data.items)
+      setEvents(previous => cursor ? [...previous, ...data.items.filter(item => !previous.some(event => event.id === item.id && !!event.capture === !!item.capture))] : data.items)
       setNextCursor(data.next_cursor)
     } catch (err) { if (sequence === eventRequest.current) setFeedback(message(err)) }
     finally { if (sequence === eventRequest.current) setBusy('') }
@@ -158,19 +167,22 @@ export default function App() {
     try {
       const updated = await api<Event | null>(`/events/${id}/match?${eventParams()}`)
       if (sequence !== eventRequest.current || origin !== currentPage()) return
-      setEvents(previous => previous.flatMap(event => event.id === id ? updated ? [updated] : [] : [event]))
-      if (!updated && nextCursor === id) setNextCursor(events.filter(event => event.id !== id).at(-1)?.id ?? null)
+      setEvents(previous => previous.flatMap(event => event.id === id && !event.capture ? updated ? [updated] : [] : [event]))
+      if (!updated && (nextCursor === id || nextCursor === `e:${id}`)) {
+        const last = events.filter(event => event.id !== id || event.capture).at(-1)
+        setNextCursor(last ? `${last.capture ? 'c' : 'e'}:${last.id}` : null)
+      }
     } catch (err) { if (sequence === eventRequest.current) setFeedback(message(err)) }
   }
   useStateUpdates(!!session, topics => {
     if (topics.some(topic => ['health', 'cameras', 'settings'].includes(topic))) void refresh()
-    if (topics.includes('activity') && ['activity', 'search'].includes(currentPage()) && events.length <= 30) void loadEvents()
+    if (topics.some(topic => ['activity', 'library'].includes(topic)) && currentPage() === 'activity' && events.length <= 30) void loadEvents()
   }, () => acceptSession(null))
   useEffect(() => {
-    if (session && (page === 'activity' || page === 'search')) void loadEvents()
+    if (session && page === 'activity') void loadEvents()
   }, [session, page, loadEvents])
   useEffect(() => {
-    if (!session || (page !== 'activity' && page !== 'search')) return
+    if (!session || page !== 'activity') return
     const timer = window.setInterval(() => { void refresh(); if (events.length <= 30) void loadEvents() }, 10000)
     return () => { window.clearInterval(timer); ++eventRequest.current }
   }, [session, page, refresh, loadEvents, events.length])
@@ -209,54 +221,71 @@ export default function App() {
   if (!session) return error ? <main className="loading-state"><h1>Porchlight is unavailable</h1><p role="alert">{error}</p><button className="primary" onClick={initialize}>Try again</button></main> : <OwnerForm creating={!setup?.owner_created} onSession={acceptSession} />
 
   const title = page === 'notifications' ? 'Notifications' : page === 'faces' ? 'Facial recognition' : navigation.find(item => item.id === page)!.label
-  const compactPage = page === 'cameras' || page === 'live' || page === 'library'
-  const currentFilters: EventFilters = { daypart: 'all', ...interpreted, query, favourites, ...Object.fromEntries(Object.entries(filters).filter(([, value]) => value).map(([key, value]) => [key, key === 'start' || key === 'end' ? new Date(value).toISOString() : value])) }
+  const compactPage = page === 'live'
+  const currentFilters: EventFilters = { daypart: 'all', ...interpreted, query, favourites, include_captures: true, media_kind: mediaKind, ...Object.fromEntries(Object.entries(filters).filter(([, value]) => value).map(([key, value]) => [key, key === 'start' || key === 'end' ? new Date(value).toISOString() : value])) }
+  const displayedDraft = draftFromFilters(currentFilters)
+  const hasArchiveFilters = mediaKind !== 'all' || Object.entries(currentFilters).some(([key, value]) => !['cursor', 'include_captures', 'media_kind'].includes(key) && (Array.isArray(value) ? value.length > 0 : !!value && !(key === 'daypart' && value === 'all')))
   return <div className="app-shell">
     <a className="skip-link" href="#main-content" onClick={event => { event.preventDefault(); document.getElementById('main-content')?.focus() }}>Skip to content</a>
     <aside className="sidebar">
-      <a className="brand" href="#cameras"><BrandMark />Porchlight</a>
+      <a className="brand" href="#live"><BrandMark />Porchlight</a>
       <nav aria-label="Main navigation">{navigation.map(item => <a href={`#${item.id}`} key={item.id} aria-current={page === item.id ? 'page' : undefined} className={page === item.id ? 'nav-item active' : 'nav-item'}><item.icon size={21} /><span>{item.label}</span></a>)}</nav>
-      <div className="sidebar-footer"><span className="local-label"><ShieldCheck size={16} />Local workspace</span><small>Development · v{health?.version ?? '0.1.0'}</small>
-        <button className="nav-item sign-out" onClick={logout}><LogOut size={18} /><span>Sign out</span></button></div>
+      <div className="sidebar-footer">
+        <a className={page === 'notifications' ? 'nav-item active' : 'nav-item'} href="#notifications" aria-current={page === 'notifications' ? 'page' : undefined}><Bell size={19} /><span>Notifications</span></a>
+        <button className="nav-item sign-out" aria-label="Sign out of Porchlight" onClick={logout}><LogOut size={18} /><span>Sign out</span></button>
+        <span className="local-label"><ShieldCheck size={16} />Local workspace</span><small>Development · v{health?.version ?? '0.1.0'}</small>
+      </div>
     </aside>
     <div className="workspace">
-      <header className="topbar"><span className="topbar-tagline">Your home, at a glance</span><a className="topbar-brand" href="#cameras" aria-label="Porchlight home"><BrandMark /><span>Porchlight</span></a><div className="topbar-actions"><a className="icon-button" href="#notifications" aria-label="Notifications"><Bell size={19} /></a><span className="status-pill"><span className="status-dot" />Local app</span><button className="icon-button" aria-label="Sign out of Porchlight" onClick={logout}><LogOut size={18} /></button></div></header>
       <main id="main-content" className={compactPage ? 'compact-page' : undefined} tabIndex={-1}>
-        <div className="page-heading"><div>{!compactPage && <span className="eyebrow">YOUR WORKSPACE</span>}<h1>{title}</h1>{!compactPage && <p>{page === 'activity' ? 'Your recordings, kept close to home.' : page === 'search' ? 'Find recordings by your notes and saved descriptions.' : 'Make Porchlight work for your home.'}</p>}</div>
+        <div className="page-heading"><div className="page-title-row"><div className="page-heading-copy"><h1>{title}</h1>{!compactPage && <p>{page === 'activity' ? 'Your recordings, kept close to home.' : 'Make Porchlight work for your home.'}</p>}</div>
+          <div className="mobile-workspace-actions"><a className="icon-button" href="#notifications" aria-label="Notifications" aria-current={page === 'notifications' ? 'page' : undefined} title="Notifications"><Bell size={19} /></a><button className="icon-button" aria-label="Sign out of Porchlight" title="Sign out" onClick={logout}><LogOut size={18} /></button></div>
+        </div>
           {page === 'activity' && <button className="primary" disabled={!!busy || health?.media_tools.state !== 'ready'} onClick={() => upload.current?.click()}><Upload size={18} />{busy === 'import' ? 'Importing…' : 'Import recording'}</button>}
         </div>
         {error && <div className="notice" role="alert"><strong>Connection needs attention</strong><p>{error}</p><button className="secondary" onClick={refresh}>Check again</button></div>}
         {feedback && <p className="feedback" role="status">{feedback}</p>}
         <input ref={upload} type="file" accept="video/mp4,.mp4,image/jpeg,.jpg,.jpeg" className="visually-hidden" aria-label="Choose an MP4 recording or JPEG image" onChange={e => { void importClip(e.target.files?.[0]) }} />
-        {page === 'cameras' && cameras.length > 0 ? <><CameraGroups cameras={cameras} onSaved={refresh} timezone={settings?.timezone ?? 'America/Toronto'} onRecording={eventId => { void openRecording(eventId) }} /><div className="notice"><strong>Camera inventory connected</strong><p>Control recording sync in Settings and review saved clips in Activity. Open Live view from the navigation to watch a camera.</p></div></> : page === 'cameras' && <>
-          <section className="setup-card"><div className="setup-card-intro"><span className="eyebrow">LET’S GET CONNECTED</span><h2>Your workspace is ready.<br /> Your cameras are next.</h2><p>Start with a local recording, or review what’s needed to connect your cameras and AI.</p><button className="primary" onClick={() => { location.hash = 'settings?setup=1' }}>Review setup<ChevronRight size={17} /></button></div>
-            <ol className="setup-progress"><li className="complete"><span><Check size={17} /></span><div><strong>Private workspace</strong><small>Owner account created</small></div></li>
-              <li className="complete"><span><HardDrive size={17} /></span><div><strong>Local archive</strong><small>{health ? `${(health.free_space_bytes / 1024 ** 3).toFixed(0)} GiB available` : 'Checking storage'}</small></div></li>
-              <li><span><Camera size={17} /></span><div><strong>Connect Blink</strong><small>Sign in locally from Settings</small></div><span className="badge">Next</span></li>
-              <li><span><ShieldCheck size={17} /></span><div><strong>Test local AI</strong><small>Synthetic image test available in Settings</small></div></li></ol>
-          </section>
-          <section className="panel empty-state"><div className="empty-icon"><Camera size={32} strokeWidth={1.5} /></div><h2>No cameras connected yet</h2><p>Connected cameras will appear here with their latest recording and capture time.</p><a className="text-link" href="#activity">Try the local archive<ChevronRight size={16} /></a></section>
-          <div className="quiet-note"><ShieldCheck size={18} /><p>No-plan recording access, live view, and phone notifications have not been verified.</p></div>
-        </>}
-        {(page === 'activity' || page === 'search') && <>
-          {page === 'search' && <SearchTools onApply={value => { setFilters(emptyFilters); setQuery(value.query ?? ''); setFavourites(value.favourites ?? false); setInterpreted(value) }} />}
-          {page === 'activity' && <DigestPanel timezone={settings?.timezone ?? 'America/Toronto'} onRecording={id => { void openRecording(id) }} />}
-          <form className="filter-bar" onSubmit={e => { e.preventDefault(); void loadEvents() }}><div className="search-field"><Search size={18} /><input aria-label="Search recordings" value={query} onChange={e => setQuery(e.target.value)} maxLength={200} placeholder="Search your notes and descriptions" /></div><button type="button" className={favourites ? 'secondary selected' : 'secondary'} aria-pressed={favourites} onClick={() => setFavourites(v => !v)}><Star size={16} />Favourites</button></form>
-          <ArchiveFilters value={filters} cameras={cameras} onChange={value => { setFilters(value); setInterpreted(null) }} />
-          <SavedViews filters={currentFilters} onApply={(value, id) => { setFilters(emptyFilters); setQuery(value.query ?? ''); setFavourites(value.favourites ?? false); setInterpreted(value); location.hash = `search?view=${id}` }} />
-          {interpreted && <div className="notice"><strong>Proposed filters applied</strong><p>Object categories: {interpreted.categories?.join(', ') || 'all'} · Colour: {interpreted.color ?? 'all'} · Time of day: {interpreted.daypart ?? 'all'}. Use Filters to replace this selection.</p><button className="secondary" onClick={() => { setInterpreted(null); setFilters(emptyFilters); setQuery(''); setFavourites(false) }}>Clear search filters</button></div>}
+        {page === 'activity' && <>
+          <div className="activity-kind" role="group" aria-label="Activity media type">{(['all', 'recordings', 'snapshots'] as const).map(kind => <button key={kind} className={mediaKind === kind ? 'secondary selected' : 'secondary'} aria-pressed={mediaKind === kind} onClick={() => setMediaKind(kind)}>{kind === 'all' ? 'All' : kind === 'recordings' ? 'Recordings' : 'Snapshots'}</button>)}</div>
+          <ActivityTools query={query} favourites={favourites} draft={displayedDraft} filters={currentFilters} cameras={cameras} timezone={settings?.timezone ?? 'America/Toronto'}
+            onQuery={setQuery} onFavourites={() => setFavourites(value => !value)} onSearch={() => { void loadEvents() }}
+            onDraft={value => {
+              setFilters(value)
+              setInterpreted(previous => {
+                if (!previous) return null
+                const next = { ...previous }
+                for (const key of Object.keys(value) as (keyof FilterDraft)[]) {
+                  if (value[key] === displayedDraft[key]) continue
+                  delete next[key]
+                  if (key === 'category') delete next.categories
+                  if (key === 'camera_id') delete next.camera_ids
+                }
+                return next
+              })
+            }}
+            onApply={value => { setFilters(emptyFilters); setQuery(value.query ?? ''); setFavourites(value.favourites ?? false); setInterpreted(value) }}
+            onSavedView={(value, id) => { setFilters(emptyFilters); setQuery(value.query ?? ''); setFavourites(value.favourites ?? false); setInterpreted(value); setMediaKind(value.media_kind ?? 'all'); location.hash = `activity?view=${id}` }}
+            onRemove={key => {
+              if (key === 'query') setQuery('')
+              if (key === 'favourites') setFavourites(false)
+              if (key in emptyFilters) setFilters(previous => ({ ...previous, [key]: '' }))
+              setInterpreted(previous => { if (!previous) return null; const next = { ...previous }; delete next[key]; return next })
+            }}
+            onClear={() => { setInterpreted(null); setFilters(emptyFilters); setQuery(''); setFavourites(false); setMediaKind('all') }}
+            onClearFilters={() => { setInterpreted(null); setFilters(emptyFilters) }}
+            onRecording={id => { void openRecording(id) }} />
           <ArchiveCoverage health={health} />
-          {events.length ? <ArchiveTimeline events={events} cameras={cameras} timezone={settings?.timezone ?? 'America/Toronto'} onRecording={id => { void openRecording(id) }} />
-            : <section className="panel empty-state"><div className="empty-icon">{page === 'search' ? <Search size={32} /> : <Activity size={32} />}</div><h2>{query || favourites ? 'No matching recordings' : 'Your timeline starts here'}</h2><p>{query || favourites ? 'Try different words or clear your filters.' : 'Start Sync recordings in Settings to save available cloud clips, or import an MP4 to test local playback.'}</p>{page === 'activity' && !query && !favourites && <button className="secondary" disabled={!!busy || health?.media_tools.state !== 'ready'} onClick={() => upload.current?.click()}><Upload size={17} />Import your first recording</button>}</section>}
+          {events.length ? <ArchiveTimeline events={events} cameras={cameras} timezone={settings?.timezone ?? 'America/Toronto'} onRecording={id => { void openRecording(id) }} onCaptureChanged={async () => { await loadEvents() }} />
+            : <section className="panel empty-state"><div className="empty-icon"><Activity size={32} /></div><h2>{hasArchiveFilters ? 'No matching recordings' : 'Your timeline starts here'}</h2><p>{hasArchiveFilters ? 'Try different words or clear your filters.' : 'Start Sync recordings in Settings to save available cloud clips, or import an MP4 to test local playback.'}</p>{!hasArchiveFilters && <button className="secondary" disabled={!!busy || health?.media_tools.state !== 'ready'} onClick={() => upload.current?.click()}><Upload size={17} />Import your first recording</button>}</section>}
           {nextCursor && <button className="secondary load-more" disabled={!!busy} onClick={() => { void loadEvents(nextCursor) }}>Load more recordings</button>}
           <div className="quiet-note"><HardDrive size={18} /><p>Manual imports are stored locally. They are separate from Blink recordings and are not evidence of camera connectivity.</p></div>
         </>}
         {page === 'notifications' && <NotificationsPage timezone={settings?.timezone ?? 'America/Toronto'} cameras={cameras} onRecording={id => { void openRecording(id) }} />}
         {page === 'faces' && <FacialRecognitionPage />}
-        {page === 'settings' && settings && <SettingsView settings={settings} health={health} onSaved={refresh} />}
+        {page === 'settings' && settings && <SettingsView cameras={cameras} settings={settings} health={health} onSaved={refresh} />}
         {selectedEvent && <EventDetail key={selectedEvent.id} event={selectedEvent} aiReady={aiReady} timezone={settings?.timezone ?? 'America/Toronto'} onClose={closeRecording} onSaved={() => { if (selectedEvent) void refreshRecording(selectedEvent.id) }} />}
-        {page === 'live' && <LivePage cameras={cameras} />}
-        {page === 'library' && <LibraryPage timezone={settings?.timezone ?? 'America/Toronto'} />}
+        {page === 'live' && <LivePage cameras={cameras} timezone={settings?.timezone ?? 'America/Toronto'} onSaved={refresh} onRecording={openRecording} />}
       </main>
       <footer className="workspace-footer">Porchlight · Stored locally. Looked after by you.</footer>
     </div>

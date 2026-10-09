@@ -4,8 +4,8 @@ import CameraCard from './CameraCard'
 import { CameraControls } from './CameraControls'
 
 type Camera = CameraList['items'][number]
-export default function CameraGroups({ cameras, timezone, onSaved, onRecording }: {
-  cameras: Camera[]; timezone: string; onSaved: () => Promise<void>; onRecording: (id: string) => void
+export default function CameraGroups({ cameras, timezone, onSaved, onRecording, networkControls = true }: {
+  cameras: Camera[]; timezone: string; onSaved: () => Promise<void>; onRecording: (id: string) => void; networkControls?: boolean
 }) {
   const [grouping, setGrouping] = useState('network')
   const groups = new Map<string, { name: string; cameras: Camera[] }>()
@@ -27,7 +27,7 @@ export default function CameraGroups({ cameras, timezone, onSaved, onRecording }
       const armed = group.cameras.every(camera => camera.observed_armed === true) ? 'Armed' : group.cameras.every(camera => camera.observed_armed === false) ? 'Disarmed' : 'Unknown'
       return <section className="camera-group" key={key} aria-label={name}>
         <div className="camera-group-heading"><h2>{name}</h2><span className="badge">{grouping === 'network' ? `${armed} · ` : ''}{group.cameras.length} {group.cameras.length === 1 ? 'camera' : 'cameras'}</span></div>
-        {grouping === 'network' && <CameraControls key={group.cameras[0].id} camera={{ ...group.cameras[0], observed_armed: armed === 'Unknown' ? null : armed === 'Armed' }} timezone={timezone} onSaved={onSaved} scope="network" />}
+        {grouping === 'network' && networkControls && <CameraControls key={group.cameras[0].id} camera={{ ...group.cameras[0], observed_armed: armed === 'Unknown' ? null : armed === 'Armed' }} timezone={timezone} onSaved={onSaved} scope="network" />}
         <div className="camera-grid">{group.cameras.map(camera => <CameraCard key={camera.id} camera={camera} networkControlsAtGroup={grouping === 'network'} timezone={timezone} onSaved={onSaved} onRecording={onRecording} />)}</div>
       </section>
     })}
