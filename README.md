@@ -6,6 +6,8 @@ Porchlight is free, open-source software under the [MIT licence](LICENSE), creat
 
 **Current status: Windows development preview.** Paid-cloud archiving and Android access have been tested. The project owner also reports completing a fresh backup/restore, a 24–48-hour reliability soak, locked-screen/closed-app phone checks and a new-user Windows installation test. These results cover the tested setup, not every camera, PC or browser. Subscription-free Sync Module retrieval remains experimental and unverified. See [known limitations](docs/KNOWN_LIMITATIONS.md) and [release evidence](docs/RELEASE_AUDIT.md).
 
+**[Download Development Preview 1 — v0.1.0-dev.1](https://github.com/kevindemara/Porchlight/releases/tag/v0.1.0-dev.1)** for a fixed source snapshot and release notes. The default branch may contain newer development changes.
+
 ## How it works
 
 Porchlight runs on **your Windows PC**. It checks Blink for available recordings, downloads them to a local archive and serves an interface you can open on the PC or, with optional HTTPS setup, on your phone. Your phone is a viewer and remote control for that PC; it does not run the recording or AI services.

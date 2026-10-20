@@ -1,6 +1,12 @@
 # Build status
 
-Updated 2026-10-20. **The local development build is runnable; hardware, phone and release acceptance remain incomplete.** The owner authorized an initial development snapshot in the private `kevindemara/Porchlight` repository. The repository must remain private until the owner decides otherwise; runtime data and personal remote-access configuration stay outside the repository.
+Updated 2026-10-20. **The Windows development preview is runnable; subscription-free storage retrieval and broader hardware/browser acceptance remain unverified.** The owner explicitly authorized public visibility and the first source-only development-preview release on 2026-10-20. Runtime data and personal remote-access configuration stay outside the repository.
+
+### Latest handoff - first public development preview authorization - 2026-10-20
+
+The owner explicitly requested making the repository public and creating the first development preview. Prepared `v0.1.0-dev.1` / Development Preview 1 as a GitHub prerelease with source archives only; no installers, models, FFmpeg binaries or private artifacts. Added versioned release notes, a changelog entry and README download link. Updated current publication status documents without rewriting their historical evidence. Runtime package versions remain 0.1.0; the Git tag/release marks the development preview. Original code/documentation are MIT; third-party notices remain distinct.
+
+Prepublication checks: clean tracked working tree at 59d7dc5 before release-document edits; remote main matched; no releases, open issues or pull requests, and zero Actions artifacts. The only hosted run was the previously documented infrastructure failure. `.venv/Scripts/python.exe -m pytest tests/test_settings.py tests/test_security.py tests/test_repository_audit.py -q` passed **21 tests in 6.62 seconds**, with the existing Starlette/httpx deprecation warning. Source/history privacy scanning uses external private patterns and writes detailed reports outside Git. No code, dependency, real media, network configuration or running service is changed by this release. Current milestone: M6 development-preview publication. Owner-reported installation/backup/soak/phone acceptance is documented separately; no-plan retrieval stays UNVERIFIED. Verify public GitHub visibility, prerelease status and tag/commit identity after publishing; no live restart is required.
 
 ### Latest handoff - public README clarity and owner acceptance - 2026-10-20
 

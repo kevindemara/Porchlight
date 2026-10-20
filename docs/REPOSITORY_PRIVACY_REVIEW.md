@@ -1,6 +1,6 @@
 # Repository privacy review - updated 2026-10-20
 
-The repository remains **private**. The owner authorized removal of the previously identified machine paths from Git history. That cleanup is now applied to published main and all three existing checkpoint tags, with verified backup and fresh-clone checks.
+The owner authorized **public visibility** and the first development preview on 2026-10-20, following source/history review. The previously authorized machine-path cleanup is applied to main and the three checkpoint tags that existed at cleanup, with verified backup and fresh-clone checks. Personal runtime/network data and original-history backups remain outside the repository.
 
 ## Completed history cleanup
 

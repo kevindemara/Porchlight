@@ -1,6 +1,6 @@
 # Known limitations · 2026-10-20
 
-Porchlight is a Windows development preview. Its original code/documentation are MIT licensed. The repository remains private pending the publication checks; this page supersedes the earlier October 7 limitations.
+Porchlight is a Windows development preview. Its original code/documentation are MIT licensed. The owner authorized the first public development preview on 2026-10-20; this page supersedes the earlier October 7 limitations.
 
 Owner acceptance update, 2026-10-20: the owner reports completing a fresh archive backup/isolated restore, a 24–48-hour soak covering automatic sync recovery, sleep/resume and network interruptions, locked-screen/closed-app Wi-Fi/cellular phone alerts with thumbnails and recording taps, and a new-user Windows installation test including script restrictions. No detailed logs, exact soak duration or measurements were provided to coding tools. These results supersede the corresponding pending checks below for the tested setup; they do not establish other-device compatibility, session-expiry/revocation behavior, storage-pressure handling or subscription-free retrieval.
 

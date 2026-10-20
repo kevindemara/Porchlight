@@ -6,7 +6,7 @@ Start with a working camera archive. AI and phone access are optional additions;
 
 Use a local folder outside OneDrive, such as `C:\Apps\Porchlight`. Download/extract the repository there. Keep the PC’s normal Windows user account for setup and running the app; its encrypted credentials belong to that user.
 
-On [GitHub](https://github.com/kevindemara/Porchlight), choose **Code → Download ZIP**, extract the ZIP, and open the extracted folder containing `setup.ps1`. Do not run scripts from inside the ZIP. While the repository is private, only invited accounts can download it.
+On [GitHub](https://github.com/kevindemara/Porchlight), choose **Code → Download ZIP**, extract the ZIP, and open the extracted folder containing `setup.ps1`. Do not run scripts from inside the ZIP. For the fixed first preview, use the source ZIP from the [v0.1.0-dev.1 release](https://github.com/kevindemara/Porchlight/releases/tag/v0.1.0-dev.1).
 
 Alternatively, if Git is installed, open PowerShell in your chosen parent folder:
 

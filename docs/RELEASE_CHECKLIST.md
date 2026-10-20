@@ -1,6 +1,6 @@
 # Local release and removal runbook
 
-Keep the repository private until publication checks and owner approval are complete. Development checkpoints have already been pushed privately. Do not publish runtime data, backup manifests, model files, private clips, session vaults or unredacted reports.
+The owner explicitly authorized public visibility and the first development-preview release on 2026-10-20. Publish only the reviewed source and notices; runtime data, backup manifests, model files, private clips, session vaults and unredacted reports remain private.
 
 The latest [release evidence review](RELEASE_AUDIT.md) distinguishes tested software from the remaining installation, phone, hardware and licence gates. Copied-source startup with existing dependencies is not a clean dependency installation.
 
@@ -15,8 +15,8 @@ The latest [release evidence review](RELEASE_AUDIT.md) distinguishes tested soft
 - [x] On 2026-10-20, the owner reported completing a new-user Windows installation test, including script restrictions. The source install still requires a permitted script workflow; no signed packaged installer is provided. This is owner-reported acceptance, not a hosted-run result. Hosted checks remain blocked by GitHub account billing/spending limits.
 - [x] On 2026-10-20, the owner reported completing a fresh archive backup/isolated restore with recordings, notes and settings, and a 24–48-hour reliability soak covering automatic recovery, sleep/resume and network interruptions. Exact duration, measurements and logs were not supplied to coding tools.
 - [x] On 2026-10-20, the owner reported completing locked-screen/closed-app phone tests on Wi-Fi/cellular, thumbnails and tap-to-recording. These results cover the tested Android setup, not every browser or device. Session expiry/revocation and broader hardware checks remain separate where not explicitly reported.
-- [ ] Keep no-plan/module retrieval experimental until genuinely new eligible local clips pass the hardware gate. This need not block an honestly labelled paid-cloud development preview.
-- [ ] Owner explicitly approves publication; create a reviewed release tag and change visibility only then.
+- [x] Keep no-plan/module retrieval experimental until genuinely new eligible local clips pass the hardware gate. This preview makes no verified subscription-free retrieval claim.
+- [x] Owner explicitly approved publication on 2026-10-20. Prepared the source-only `v0.1.0-dev.1` prerelease and reviewed [release notes](releases/v0.1.0-dev.1.md); publish that reviewed tag without personal artifacts.
 
 ## Reproducible software checks
 

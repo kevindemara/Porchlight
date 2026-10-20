@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.0-dev.1 — first development preview · 2026-10-20
+
+- First source-only Windows preview: local Blink cloud archiving with automatic temporary-error recovery, unified Activity, optional local AI and reviewed face matches, Android HTTPS/home-screen access and optional Web Push.
+- Includes MIT licensing, third-party notices, beginner installation/AI/phone guides, privacy-reviewed source/history and documented owner acceptance. Sync Module subscription-free retrieval remains experimental and unverified.
+- See the [release notes](docs/releases/v0.1.0-dev.1.md) for setup, evidence and limitations. No installer, private configuration, media, model weights or FFmpeg executable is bundled.
+
 ## Camera audio listening and recordings · 2026-10-08
 
 - Preserve available camera audio in live playback and newly saved live recordings using the existing local encoder. Keep playback muted initially, with accessible Unmute/Mute and volume controls in normal and fullscreen view.
