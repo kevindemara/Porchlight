@@ -148,6 +148,9 @@ test('installed-app launch headers load the shell on first and service-worker-co
   await expect(page.getByRole('heading', { name: /Sign in to Porchlight|Make yourself at home/ })).toBeVisible()
   await page.evaluate(async () => { await navigator.serviceWorker.ready })
   await expect.poll(() => page.evaluate(() => !!navigator.serviceWorker.controller)).toBe(true)
+  // Exercise Android launcher metadata on the worker-fetch fallback as well.
+  // Playwright does not route the browser's native navigation preload request.
+  await page.evaluate(async () => { await (await navigator.serviceWorker.ready).navigationPreload.disable() })
   for (const mode of ['same-origin', 'cors', 'navigate']) {
     metadata = { 'sec-fetch-mode': mode, 'sec-fetch-dest': 'empty' }
     const reopened = await context.newPage()
@@ -160,6 +163,57 @@ test('installed-app launch headers load the shell on first and service-worker-co
   }
   expect(launches).toBe(4)
   expect(workerLaunches).toBe(3)
+})
+
+test('installed launch uses a browser navigation even when the worker cannot fetch the document', async ({ page, context }) => {
+  await page.goto('/')
+  await page.evaluate(async () => { await navigator.serviceWorker.ready })
+  await expect.poll(() => page.evaluate(() => !!navigator.serviceWorker.controller)).toBe(true)
+  expect(await page.evaluate(async () => (await (await navigator.serviceWorker.ready).navigationPreload.getState()).enabled)).toBe(true)
+  const worker = context.serviceWorkers()[0]
+  await worker.evaluate(() => {
+    const original = globalThis.fetch
+    Object.defineProperty(globalThis, 'restoreNavigationFetch', { configurable: true, value: () => { globalThis.fetch = original } })
+    globalThis.fetch = async (request, options) => {
+      if (request instanceof Request && request.mode === 'navigate') throw new TypeError('Synthetic worker network failure')
+      return original(request, options)
+    }
+  })
+  try {
+    const response = await page.goto('/?installed-launch=synthetic#live')
+    expect(response?.status()).toBe(200)
+    await expect(page.getByRole('heading', { name: /Sign in to Porchlight|Make yourself at home/ })).toBeVisible()
+    expect(await page.evaluate(async () => (await caches.keys()).length)).toBe(0)
+  } finally {
+    await worker.evaluate(() => { (globalThis as unknown as { restoreNavigationFetch: () => void }).restoreNavigationFetch() })
+  }
+  // A browser without preload still uses the existing network-only route.
+  await page.evaluate(async () => { await (await navigator.serviceWorker.ready).navigationPreload.disable() })
+  const fallback = await page.goto('/?without-preload=synthetic#live')
+  expect(fallback?.status()).toBe(200)
+  await expect(page.getByRole('heading', { name: /Sign in to Porchlight|Make yourself at home/ })).toBeVisible()
+  // A native retry must also work without preload and without worker fetch.
+  await worker.evaluate(() => {
+    const original = globalThis.fetch
+    Object.defineProperty(globalThis, 'restoreNavigationFetch', { configurable: true, value: () => { globalThis.fetch = original } })
+    globalThis.fetch = async (request, options) => {
+      if (request instanceof Request && request.mode === 'navigate') throw new TypeError('Synthetic worker network failure')
+      return original(request, options)
+    }
+  })
+  try {
+    await page.goto('/?worker-unreachable=synthetic')
+    await expect(page.getByText('Launch check: direct-navigation-v1')).toBeVisible()
+    await page.getByRole('link', { name: 'Try again', exact: true }).click()
+    await expect(page.getByRole('heading', { name: /Sign in to Porchlight|Make yourself at home/ })).toBeVisible()
+    await expect(page).toHaveURL(/porchlight-direct=1/)
+    // Opting out of worker handling does not bypass the server's auth checks.
+    expect((await page.request.get('/api/v1/cameras')).status()).toBe(401)
+    expect((await page.request.get('/api/v1/auth/session', { headers: { origin: 'null', 'sec-fetch-site': 'cross-site' } })).status()).toBe(403)
+    expect(await page.evaluate(async () => (await caches.keys()).length)).toBe(0)
+  } finally {
+    await worker.evaluate(() => { (globalThis as unknown as { restoreNavigationFetch: () => void }).restoreNavigationFetch() })
+  }
 })
 
 test('install prompt is retained before settings, requested only on click, and consumed once', async ({ page }, info) => {

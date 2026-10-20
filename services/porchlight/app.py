@@ -25,7 +25,9 @@ from porchlight.activity import capture_event, timeline_rows
 from porchlight.ai.evidence import Evidence
 from porchlight.ai.ollama import Ollama
 from porchlight.ai.pipeline import AnalysisPipeline
+from porchlight.ai.readiness import inspect_machine
 from porchlight.api.contracts import (
+    AiReadiness,
     AiResources,
     AnalysisJobView,
     AnalysisRequest,
@@ -826,6 +828,33 @@ def create_app(config: Config | None = None) -> FastAPI:
         app.state.auth.require(request)
         return await app.state.ollama.models()  # type: ignore[no-any-return]
 
+    @app.get("/api/v1/setup/ai-readiness", response_model=AiReadiness)
+    async def ai_readiness(request: Request) -> AiReadiness:
+        app.state.auth.require(request)
+        return cast(AiReadiness, await local_work(inspect_machine))
+
+    @app.get("/api/v1/setup/guides/{guide}")
+    def setup_guide(
+        guide: Literal["quick-start", "local-ai", "phone", "direct-https", "cloudflare-backup"],
+        request: Request,
+    ) -> FileResponse:
+        app.state.auth.require(request)
+        from porchlight.config import ROOT
+
+        filename = {
+            "quick-start": "QUICK_START.md",
+            "local-ai": "LOCAL_AI_SETUP.md",
+            "phone": "PHONE_SETUP.md",
+            "direct-https": "DIRECT_HTTPS.md",
+            "cloudflare-backup": "CLOUDFLARE_BACKUP.md",
+        }[guide]
+        return FileResponse(
+            ROOT / "docs" / filename,
+            media_type="text/markdown",
+            filename=filename,
+            headers={"Cache-Control": "no-store"},
+        )
+
     @app.get("/api/v1/ollama/resources", response_model=AiResources)
     async def ai_resources(request: Request) -> AiResources:
         app.state.auth.require(request)
@@ -1440,7 +1469,7 @@ def create_app(config: Config | None = None) -> FastAPI:
             raise ApiError(
                 409,
                 "LOCAL_STORAGE_NOT_READY",
-                "Blink must report compatible, active local storage before syncing.",
+                "Blink must report enabled, active local storage before a local sync test.",
             )
         app.state.local_recordings.control(body.enabled)
         return local_recording_status()

@@ -22,6 +22,12 @@ export async function enterWorkspace(page: Page) {
   await page.getByLabel('Password', { exact: true }).fill('synthetic-browser-passphrase')
   if (await page.getByLabel('Confirm password').count()) await page.getByLabel('Confirm password').fill('synthetic-browser-passphrase')
   await page.getByRole('button', { name: /Create workspace|^Sign in$/ }).click()
+  // New owners land in the real setup guide. Most journeys begin on Live View.
+  await expect(page.getByRole('heading', { name: 'Live View', exact: true }).or(page.getByRole('heading', { name: 'Set up Porchlight', exact: true }))).toBeVisible()
+  if (await page.getByRole('button', { name: 'Close guide', exact: true }).isVisible()) {
+    await page.getByRole('button', { name: 'Close guide', exact: true }).click()
+    await page.getByRole('navigation', { name: 'Main navigation' }).getByRole('link', { name: 'Live View', exact: true }).click()
+  }
   await expect(page.getByRole('heading', { name: 'Live View', exact: true })).toBeVisible()
   sessions.set(origin, await page.context().cookies())
 }

@@ -322,22 +322,31 @@ class BlinkAdapter:
             identifier = str(uuid5(UUID(self.namespace), f"module:{module['id']}"))
             ready = (
                 module.get("local_storage_enabled") is True
-                and module.get("local_storage_compatible") is True
                 and module.get("local_storage_status") == "active"
             )
+            # blinkpy's local-storage workflow uses active status, not the separate
+            # compatibility flag. XR+ can report enabled/active with compatible=False.
+            # This only permits an explicit manifest test; it never proves retrieval.
+            compatible = module.get("local_storage_compatible")
             self.local_modules.append(
                 LocalModuleView(
                     id=identifier,
                     name=str(module.get("name", "Sync Module"))[:120],
                     storage_ready=ready,
+                    storage_compatible=compatible if isinstance(compatible, bool) else None,
                     message=(
-                        "API reports compatible, active local storage. "
-                        "Retrieval needs hardware testing."
+                        "Blink reports enabled, active local storage. "
+                        + (
+                            "The compatibility flag is false or unknown; "
+                            "local sync will test the clip list before downloading."
+                            if compatible is not True
+                            else "Clip-list and download access still need testing."
+                        )
                     )
                     if ready
                     else (
-                        "Compatible, active local storage has not been reported. "
-                        "Core cannot record to removable storage."
+                        "Enabled, active local storage has not been reported. "
+                        "Check this module’s storage status in the Blink app."
                     ),
                     checked_at=iso(time.time()),
                 )

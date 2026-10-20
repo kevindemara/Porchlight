@@ -24,6 +24,20 @@ Blink's official documentation describes USB Local Storage on Sync Module 2, mic
 
 ## Local does not mean cloud-independent
 
+### XR+ native check, 2026-10-19
+
+Owner confirms a microSD card is connected and a paid plan is active, then confirms the official Blink Local Storage clip list is empty. Native owner-authorized single-actor checks observed one module reporting `local_storage_enabled=true`, `local_storage_status=active` and `local_storage_compatible=false`. The pinned blinkpy 0.25.9 [module implementation](https://github.com/fronzbot/blinkpy/blob/v0.25.9/blinkpy/sync_module.py) bases local retrieval on active status, not the separate compatibility flag. Porchlight now treats explicitly enabled/active storage as a manifest-test candidate and preserves the reported compatibility flag; false/unknown compatibility remains visible and does not become a successful access claim. Disabled/inactive/unknown-enabled modules remain blocked.
+
+The real manifest request returned a valid, complete **empty list**. This establishes a reachable manifest workflow on this setup, not a successful recording transfer. **Clip download/playback, fresh-clip retrieval, post-restart new-clip retrieval and no-plan acceptance remain NOT RUN.** Paid-plan daily backups are a separate storage mode; do not infer a subscription-free path or cancel anything based on this result. Before the next retrieval test, the owner must confirm a genuinely new playable recording in Blink's Local Storage list. No further empty-list polling is needed meanwhile.
+
+For an explicit local diagnostic, stop the regular backend using its existing profile/configuration, then run `python scripts/probe-local-storage.py` in the installed environment; `--download-latest` additionally tests one clip when available. It acquires the normal exclusive profile lock, uses the OS vault/adapter, applies existing bounds and emits only allowlisted flags/counts/results. Test media stays under the runtime profile's private-reports directory. Restart the regular backend afterward. Never run a second actor against the live app, override storage flags, or publish private probe media.
+
+### Hardware choices in guided setup (2026-10-12)
+
+The wizard and Cameras & recording settings now persist owner-selected camera/module guidance separately from observed capabilities. Choices include unknown, no module, original Sync Module, Core, Sync Module 2, XR, XR+ and multiple types. Older settings safely default to unknown. The choice never populates provider storage targets, starts sync, changes entitlement or verifies no-plan access.
+
+Blink's current [local-storage guide](https://support.blinkforhome.com/using-your-sync-module/sync-module-2-local-storage-operation), [Module 2 FAQ](https://support.blinkforhome.com/faq-sync-module-2) and [XR+ FAQ](https://blink.helpjuice.com/en_US/faq-sync-module-xr-plus/sync-module-xr-plus-faq) support USB storage on Module 2 and microSD storage on XR/XR+. Core and original modules do not provide removable-storage recording. XR+ USB-C is power only. Plan-covered camera backups, legacy-camera cloud storage and uncovered-camera direct local storage remain distinct; check each camera in mixed systems. Vendor documentation establishes the hardware's advertised options, not Porchlight adapter compatibility. New XR+ physical retrieval acceptance remains NOT RUN until the owner finishes onboarding and explicitly tests fresh recordings.
+
 The reviewed `blinkpy` documentation describes local-manifest and clip-request operations mediated through Blink's service. Its description of a local clip transfer includes upload/download through the service; treat that as an unofficial implementation observation, not a permanent vendor contract. [R1](15_SOURCES_AND_VERSIONING.md#r1)
 
 Therefore the product promise is **local AI + local retained archive**, not “no footage ever passes through Blink” or “works without internet.” If the internet goes down, already archived files can still be viewed/analyzed locally. New Blink retrieval may stop.

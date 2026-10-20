@@ -46,6 +46,16 @@ class SetupState(Contract):
     owner_created: bool
 
 
+class AiReadiness(Contract):
+    ram_bytes: int | None
+    cpu_threads: int | None
+    gpu_memory_bytes: int | None
+    recommendation: Literal["unknown", "skip", "cpu", "light", "balanced"]
+    suggested_model: Literal["qwen3-vl:4b", "qwen3-vl:8b"] | None
+    suggested_workload: Literal["light", "balanced"]
+    message: str
+
+
 class PushKeys(Contract):
     p256dh: str = Field(min_length=80, max_length=100)
     auth: str = Field(min_length=20, max_length=30)
@@ -162,6 +172,11 @@ class AppSettings(Contract):
     reserve_gib: int = Field(default=5, ge=1, le=1000)
     theme: Literal["system", "light", "dark"] = "system"
     blink_entitlement: Literal["unknown", "paid", "trial", "none"] = "unknown"
+    # Owner-selected setup guidance only; never an input to provider capability checks.
+    blink_camera_setup: Literal["unknown", "doorbell", "cameras", "mixed"] = "unknown"
+    blink_module_setup: Literal[
+        "unknown", "none", "original", "core", "sync_module_2", "xr", "xr_plus", "mixed"
+    ] = "unknown"
 
     @field_validator("timezone")
     @classmethod
@@ -663,6 +678,7 @@ class LocalModuleView(Contract):
     id: str
     name: str
     storage_ready: bool
+    storage_compatible: bool | None = None
     message: str
     checked_at: str
 

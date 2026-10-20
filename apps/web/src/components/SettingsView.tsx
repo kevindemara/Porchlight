@@ -7,7 +7,9 @@ import { LocalRecordingSetup } from './LocalRecordingSetup'
 import StorageSettings from './StorageSettings'
 import SetupGuide from './SetupGuide'
 import NotificationsPage from './NotificationsPage'
-import InstallApp from './InstallApp'
+import AiSetup from './AiSetup'
+import PhoneSetup from './PhoneSetup'
+import BlinkHardwareSetup from './BlinkHardwareSetup'
 
 const sections = [{ id: 'cameras', label: 'Cameras & recording' }, { id: 'ai', label: 'AI' }, { id: 'storage', label: 'Storage' }, { id: 'notifications', label: 'Notifications' }, { id: 'appearance', label: 'Appearance' }, { id: 'diagnostics', label: 'Diagnostics' }] as const
 type Section = typeof sections[number]['id']
@@ -92,7 +94,7 @@ export default function SettingsView({ settings, health, onSaved, focused, camer
       <button ref={guideButton} className="secondary settings-guide-action" onClick={() => setGuideOpen(true)}>{cameras.length ? 'Review setup' : 'Open setup guide'}</button>
     </div>}
     {!focused && <div id="settings-cameras" hidden={active !== 'cameras'} className="settings-content">
-      <BlinkSetup onConnected={onSaved} /><RecordingSetup onChanged={onSaved} /><LocalRecordingSetup onChanged={onSaved} />
+      <BlinkSetup onConnected={onSaved} />{active === 'cameras' && <BlinkHardwareSetup settings={settings} onSaved={async () => { setDraft(await api<Settings>('/settings')); await onSaved() }} />}<RecordingSetup onChanged={onSaved} /><LocalRecordingSetup onChanged={onSaved} />
       <section className="panel settings-section"><h2>Recording entitlement</h2>
       <label htmlFor="blink-plan">Blink recording entitlement</label><select id="blink-plan" value={draft.blink_entitlement} onChange={e => setDraft({ ...draft, blink_entitlement: e.target.value as Settings['blink_entitlement'] })}>
         <option value="unknown">Not confirmed</option><option value="paid">Paid plan</option><option value="trial">Free trial</option><option value="none">Neither plan nor trial</option>
@@ -102,6 +104,7 @@ export default function SettingsView({ settings, health, onSaved, focused, camer
       </section>
     </div>}
     <div id="settings-ai" hidden={active !== 'ai'} className="settings-content">
+      {!focused && active === 'ai' && <AiSetup onSaved={async () => { setDraft(await api<Settings>('/settings')); await onSaved() }} />}
 <section className="panel settings-section">
       <div className="section-heading"><Cpu size={22} /><div><h2>Local AI</h2><p>Use a vision model already installed in Ollama.</p></div></div>
       <button className="secondary" onClick={loadModels} disabled={!!busy}><RefreshCw size={16} />{busy === 'models' ? 'Checking…' : 'Check local models'}</button>
@@ -136,7 +139,7 @@ export default function SettingsView({ settings, health, onSaved, focused, camer
     </div>
     {!focused && <><div id="settings-notifications" hidden={active !== 'notifications'} className="settings-content">
       <a className="text-link" href="#notifications">Open notification inbox</a>
-      <InstallApp />
+      {active === 'notifications' && <PhoneSetup />}
       <NotificationsPage mode="settings" timezone={settings.timezone} cameras={cameras} />
     </div><div id="settings-appearance" hidden={active !== 'appearance'} className="settings-content">
 <section className="panel settings-section">

@@ -50,6 +50,8 @@ Quiet hours affect notifications, not camera arming/recording. Define intervals 
 
 ## Remote access boundary
 
+The beginner path is documented in [phone connection options](PHONE_SETUP.md). [Direct home HTTPS](DIRECT_HTTPS.md) is an optional browser-only path for eligible home connections, with a separately configured [private Cloudflare backup](CLOUDFLARE_BACKUP.md) when desired. The wizard reports the configured origin and provides instructions; it does not create exposure or mark cellular delivery verified. Published Cloudflare HTTP tunnels have explicit video restrictions, unlike private network routes. Provider limits and actual locked-screen/cellular acceptance remain separate gates.
+
 First validate localhost, then trusted home-network HTTPS. For access away from home, prefer an owner-managed private VPN and authenticated HTTPS rather than publicly exposing the API. The setup wizard should explain that the owner must configure reachability; do not auto-modify the router, firewall, VPN or certificates.
 
 A private VPN may require a reachable gateway or a separately chosen relay under the user's network conditions. Do not assume a free public tunnel, static IP, DNS name, or a free-tier service is available forever. No relay is required for local operation. The design must remain usable without signing up for a hosted service.

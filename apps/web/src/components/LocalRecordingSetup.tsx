@@ -37,10 +37,10 @@ export function LocalRecordingSetup({ onChanged }: { onChanged: () => Promise<vo
   return <section className="panel settings-section"><h2>Sync Module local storage</h2>
     <p className="helper">Experimental retrieval copies listed module clips into this PC’s archive through Blink’s service. Internet is required. Removable storage recording is configured in the official Blink app.</p>
     {status?.modules.map(module => <div className="diagnostic-row" key={module.id}><div><strong>{module.name}</strong><small>{module.message}</small></div><span className="badge">{module.storage_ready ? 'Candidate' : 'Unavailable'}</span></div>)}
-    {status && !status.modules.length && <p>No eligible module has been observed. Sync Module Core cannot record to USB or microSD.</p>}
+    {status && !status.modules.length && <p>No module has been observed. Connect Blink and check your module and storage in the official Blink app.</p>}
     {status && <p role="status">{status.sync.message} {status.sync.archived} saved · {status.sync.pending} waiting · {status.sync.failed} unavailable</p>}
     <div className="camera-control-actions"><button className="secondary" disabled={busy || !status?.eligible} onClick={() => { void control(true) }}>{status?.sync.enabled ? 'Retry local recording work' : 'Sync local recordings'}</button>{status?.sync.enabled && <button className="secondary" disabled={busy} onClick={() => { void control(false) }}>Pause local sync</button>}</div>
-    <p className="helper">Local storage retrieval and no-plan compatibility need testing on your exact module. This does not turn cloud clip backups into direct local recording.</p>
+    <p className="helper">Local storage retrieval and no-plan compatibility need testing on your exact module. If Blink’s Local Storage clip list is empty, there are no local clips to import. A paid plan or trial may provide daily cloud clip backups instead of recordings in that list.</p>
     {feedback && <p role="alert">{feedback}</p>}
   </section>
 }

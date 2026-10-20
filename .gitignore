@@ -31,6 +31,20 @@ backups/
 secrets/
 *.pem
 *.key
+*.crt
+*.cer
+*.pfx
+*.p12
+*.dpapi
+# Personal HTTPS/connector configuration belongs outside the source checkout.
+/Caddyfile
+/Caddyfile.*
+/desktop-config.json
+/connector-process.json
+/https-process.json
+/certificate-data/
+/caddy-managed-certificates/
+/*RemoteTesting/
 *.log
 .DS_Store
 Thumbs.db

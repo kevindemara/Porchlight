@@ -1,5 +1,7 @@
 # 11 · Windows setup and operations
 
+For beginner installation, use [Quick start](QUICK_START.md): `setup.ps1 -Check` is read-only, and `setup.ps1` prompts separately for application packages and media tools. The first local owner enters the in-app guide. AI is optional; [local AI setup](LOCAL_AI_SETUP.md) and [phone setup](PHONE_SETUP.md) explain their explicit opt-in actions.
+
 ## Existing environment
 
 Use the existing Windows Ollama installation and its current model directory. The target GPU/RAM information is an assumption from the owner's prior setup; verify locally. Do not reinstall Ollama, reset its settings, remove models, or relocate any existing model folders.
@@ -20,7 +22,7 @@ If local execution policy blocks the script, review its text and use your establ
 
 ## M0 prerequisites Codex should resolve
 
-Git; a supported Python version (prefer an existing compatible Python 3.12/3.13 installation); Node on a currently supported LTS release compatible with the selected frontend build tools; npm; FFmpeg and ffprobe; existing Ollama. Use a project Python virtual environment. npm avoids assuming pnpm is already installed on this PC. If tools are absent, provide specific official installation steps and request the necessary local action rather than silently changing the machine.
+Git or an extracted source archive; a supported Python version (3.12–3.14); Node on a supported release compatible with the selected frontend build tools; npm; FFmpeg and ffprobe for media processing. **Ollama is optional**, not an archive prerequisite. Use a project Python virtual environment. npm avoids assuming pnpm is already installed on this PC. If tools are absent, provide specific official installation steps and require the necessary local action rather than silently changing the machine.
 
 Pin actual working package versions with lockfiles. Do not invent a tested runtime matrix. Include timezone data for Python on Windows so `America/Toronto` works consistently.
 
@@ -30,6 +32,9 @@ These commands were required build outputs in the original specification. All sc
 
 | Script | Behaviour |
 |---|---|
+| `setup.ps1` | Beginner wrapper: read-only prerequisite check, explicit prompts before installing locked core packages/media tools; no automatic AI, remote access or service registration |
+| `scripts/setup-local-ai.ps1` | Preview by default; explicit local-only configuration merge/backup or one allowlisted model pull with `-Apply`; never restart shared Ollama or enable analysis |
+| `scripts/configure-phone.ps1` | Preview by default; explicit exact HTTPS origin and optional dedicated tunnel routing saved outside Git with `-Apply`; never install/start connectors or change DNS/firewall |
 | `bootstrap.ps1` | `-Check` validates runtimes without installing; ordinary explicit invocation creates project venv, installs locked dependencies and builds UI; never overwrite data |
 | `dev.ps1` | Start development backend/frontend on loopback with clear ports; avoid duplicate pollers |
 | `start.ps1` | Start one production backend serving built UI; show local URL and data location |

@@ -479,6 +479,68 @@
         }
       }
     },
+    "/api/v1/setup/ai-readiness": {
+      "get": {
+        "summary": "Ai Readiness",
+        "operationId": "ai_readiness_api_v1_setup_ai_readiness_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiReadiness"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/setup/guides/{guide}": {
+      "get": {
+        "summary": "Setup Guide",
+        "operationId": "setup_guide_api_v1_setup_guides__guide__get",
+        "parameters": [
+          {
+            "name": "guide",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "quick-start",
+                "local-ai",
+                "phone",
+                "direct-https",
+                "cloudflare-backup"
+              ],
+              "type": "string",
+              "title": "Guide"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/ollama/resources": {
       "get": {
         "summary": "Ai Resources",
@@ -4007,6 +4069,93 @@
   },
   "components": {
     "schemas": {
+      "AiReadiness": {
+        "properties": {
+          "ram_bytes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ram Bytes"
+          },
+          "cpu_threads": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cpu Threads"
+          },
+          "gpu_memory_bytes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gpu Memory Bytes"
+          },
+          "recommendation": {
+            "type": "string",
+            "enum": [
+              "unknown",
+              "skip",
+              "cpu",
+              "light",
+              "balanced"
+            ],
+            "title": "Recommendation"
+          },
+          "suggested_model": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "qwen3-vl:4b",
+                  "qwen3-vl:8b"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggested Model"
+          },
+          "suggested_workload": {
+            "type": "string",
+            "enum": [
+              "light",
+              "balanced"
+            ],
+            "title": "Suggested Workload"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "ram_bytes",
+          "cpu_threads",
+          "gpu_memory_bytes",
+          "recommendation",
+          "suggested_model",
+          "suggested_workload",
+          "message"
+        ],
+        "title": "AiReadiness"
+      },
       "AiResources": {
         "properties": {
           "available": {
@@ -4426,6 +4575,32 @@
               "none"
             ],
             "title": "Blink Entitlement",
+            "default": "unknown"
+          },
+          "blink_camera_setup": {
+            "type": "string",
+            "enum": [
+              "unknown",
+              "doorbell",
+              "cameras",
+              "mixed"
+            ],
+            "title": "Blink Camera Setup",
+            "default": "unknown"
+          },
+          "blink_module_setup": {
+            "type": "string",
+            "enum": [
+              "unknown",
+              "none",
+              "original",
+              "core",
+              "sync_module_2",
+              "xr",
+              "xr_plus",
+              "mixed"
+            ],
+            "title": "Blink Module Setup",
             "default": "unknown"
           }
         },
@@ -7044,6 +7219,17 @@
           "storage_ready": {
             "type": "boolean",
             "title": "Storage Ready"
+          },
+          "storage_compatible": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Storage Compatible"
           },
           "message": {
             "type": "string",

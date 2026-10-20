@@ -262,6 +262,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/setup/ai-readiness": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Ai Readiness */
+        get: operations["ai_readiness_api_v1_setup_ai_readiness_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/setup/guides/{guide}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Setup Guide */
+        get: operations["setup_guide_api_v1_setup_guides__guide__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/ollama/resources": {
         parameters: {
             query?: never;
@@ -1517,6 +1551,29 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AiReadiness */
+        AiReadiness: {
+            /** Ram Bytes */
+            ram_bytes: number | null;
+            /** Cpu Threads */
+            cpu_threads: number | null;
+            /** Gpu Memory Bytes */
+            gpu_memory_bytes: number | null;
+            /**
+             * Recommendation
+             * @enum {string}
+             */
+            recommendation: "unknown" | "skip" | "cpu" | "light" | "balanced";
+            /** Suggested Model */
+            suggested_model: ("qwen3-vl:4b" | "qwen3-vl:8b") | null;
+            /**
+             * Suggested Workload
+             * @enum {string}
+             */
+            suggested_workload: "light" | "balanced";
+            /** Message */
+            message: string;
+        };
         /** AiResources */
         AiResources: {
             /** Available */
@@ -1695,6 +1752,18 @@ export interface components {
              * @enum {string}
              */
             blink_entitlement: "unknown" | "paid" | "trial" | "none";
+            /**
+             * Blink Camera Setup
+             * @default unknown
+             * @enum {string}
+             */
+            blink_camera_setup: "unknown" | "doorbell" | "cameras" | "mixed";
+            /**
+             * Blink Module Setup
+             * @default unknown
+             * @enum {string}
+             */
+            blink_module_setup: "unknown" | "none" | "original" | "core" | "sync_module_2" | "xr" | "xr_plus" | "mixed";
         };
         /** BlinkCredentials */
         BlinkCredentials: {
@@ -2592,6 +2661,8 @@ export interface components {
             name: string;
             /** Storage Ready */
             storage_ready: boolean;
+            /** Storage Compatible */
+            storage_compatible?: boolean | null;
             /** Message */
             message: string;
             /** Checked At */
@@ -3521,6 +3592,57 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ModelList"];
+                };
+            };
+        };
+    };
+    ai_readiness_api_v1_setup_ai_readiness_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiReadiness"];
+                };
+            };
+        };
+    };
+    setup_guide_api_v1_setup_guides__guide__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                guide: "quick-start" | "local-ai" | "phone" | "direct-https" | "cloudflare-backup";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

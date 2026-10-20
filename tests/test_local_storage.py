@@ -1,5 +1,6 @@
 import asyncio
 import copy
+import runpy
 import time
 from pathlib import Path
 from types import SimpleNamespace
@@ -7,6 +8,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 from porchlight.api.contracts import ApiError, BlinkStatus
+from porchlight.config import ROOT
 from porchlight.ingestion.imports import Importer
 from porchlight.ingestion.recordings import Recordings
 from porchlight.providers.blink import local_storage
@@ -60,6 +62,33 @@ def test_manifest_identity_survives_generation_and_unknown_timestamps_are_preser
     ):
         with pytest.raises(ApiError):
             normalize_manifest(body, NAMESPACE, "10", MODULE, {})
+    _, empty = normalize_manifest({"manifest_id": 2, "clips": []}, NAMESPACE, "10", MODULE, {})
+    assert empty == []  # A valid empty manifest is not a successful clip download.
+
+
+def test_storage_diagnostic_reports_only_allowlisted_flags() -> None:
+    flags = runpy.run_path(str(ROOT / "scripts/probe-local-storage.py"))["storage_flags"]
+    raw = {
+        "id": "private-device-id",
+        "name": "Private camera location",
+        "serial": "private-serial",
+        "local_storage_enabled": True,
+        "local_storage_compatible": False,
+        "local_storage_status": "active",
+    }
+    result = flags(raw)
+    assert result == {
+        "local_storage_enabled": True,
+        "local_storage_enabled_format": "boolean",
+        "local_storage_compatible": False,
+        "local_storage_compatible_format": "boolean",
+        "local_storage_status": "active",
+    }
+    assert flags({"local_storage_status": "private-secret"})["local_storage_status"] == (
+        "unrecognized"
+    )
+    assert flags({})["local_storage_enabled_format"] == "missing"
+    assert flags({"local_storage_enabled": "private-secret"})["local_storage_enabled"] is None
 
 
 def adapter_fixture(config, db) -> BlinkAdapter:
@@ -85,6 +114,46 @@ def adapter_fixture(config, db) -> BlinkAdapter:
     provider.blink = blink
     provider.refresh_if_needed = AsyncMock()
     return provider
+
+
+@pytest.mark.parametrize(
+    "enabled,status,compatible,candidate",
+    [
+        (True, "active", True, True),
+        (True, "active", False, True),  # Observed XR+ response; not proof of retrieval.
+        (True, "active", None, True),
+        (False, "active", True, False),
+        (True, "inactive", True, False),
+        (True, "unavailable", False, False),
+        (None, "active", True, False),
+        ("true", "active", True, False),
+    ],
+)
+def test_active_storage_candidates_do_not_treat_compatibility_as_entitlement(
+    config, enabled, status, compatible, candidate
+) -> None:
+    db = Database(config.data_root)
+    db.migrate()
+    try:
+        provider = adapter_fixture(config, db)
+        module = provider.blink.homescreen["sync_modules"][0]
+        module.update(
+            local_storage_enabled=enabled,
+            local_storage_status=status,
+            local_storage_compatible=compatible,
+        )
+        asyncio.run(provider.read_inventory())
+        assert bool(provider.local_targets) is candidate
+        assert provider.local_modules[0].storage_ready is candidate
+        assert provider.local_modules[0].storage_compatible is compatible
+        if candidate and compatible is not True:
+            assert "test the clip list" in provider.local_modules[0].message
+        # Discovery alone must never request a manifest or create a recording event.
+        with db.session() as session:
+            assert session.scalar(select(func.count()).select_from(Event)) == 0
+            assert session.scalar(select(func.count()).select_from(RecordingReference)) == 0
+    finally:
+        db.close()
 
 
 def test_module_workflow_coalesces_manifests_persists_requests_and_survives_restart(

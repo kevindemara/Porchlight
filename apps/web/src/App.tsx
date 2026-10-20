@@ -226,7 +226,7 @@ export default function App() {
   }
 
   if (loading) return <main className="loading-state"><BrandMark /><p>Opening Porchlight…</p></main>
-  if (!session) return error ? <main className="loading-state"><h1>Porchlight is unavailable</h1><p role="alert">{error}</p><button className="primary" onClick={initialize}>Try again</button></main> : <OwnerForm creating={!setup?.owner_created} onSession={acceptSession} />
+  if (!session) return error ? <main className="loading-state"><h1>Porchlight is unavailable</h1><p role="alert">{error}</p><button className="primary" onClick={initialize}>Try again</button></main> : <OwnerForm creating={!setup?.owner_created} onSession={value => { acceptSession(value); if (!setup?.owner_created) location.hash = 'settings?setup=1' }} />
 
   const title = page === 'notifications' ? 'Notifications' : page === 'faces' ? 'Facial recognition' : navigation.find(item => item.id === page)!.label
   const compactPage = page === 'live'

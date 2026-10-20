@@ -1,12 +1,29 @@
 /* Porchlight keeps recordings, API data and account state out of offline caches. */
 self.addEventListener('install', event => event.waitUntil(self.skipWaiting()))
-self.addEventListener('activate', event => event.waitUntil(self.clients.claim()))
+self.addEventListener('activate', event => event.waitUntil((async () => {
+  // Start document requests in the browser while this worker wakes up, rather
+  // than making every installed-app launch depend on a worker-initiated fetch.
+  // Enabling this is optional; unsupported browsers keep the network-only path.
+  try { await self.registration.navigationPreload?.enable() } catch { /* Use fetch below. */ }
+  await self.clients.claim()
+})()))
 self.addEventListener('fetch', event => {
   if (event.request.mode !== 'navigate') return
   const url = new URL(event.request.url)
   if (url.origin !== self.location.origin) return
-  event.respondWith(fetch(event.request).catch(() => new Response(
-    '<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Porchlight unavailable</title><body><main><h1>Porchlight is unavailable</h1><p>The PC must be awake and reachable to save recordings, analyze activity or send alerts.</p><p>This screen contains no cached recordings or account information.</p><p><a href="/">Try again</a></p></main></body></html>',
+  // The offline page offers an explicit native-browser retry. Only the public
+  // shell may bypass worker handling; server authentication/security still apply.
+  if (['/', '/index.html'].includes(url.pathname) && url.searchParams.get('porchlight-direct') === '1') return
+  event.respondWith((async () => {
+    // Consume the browser's response so a successful preload never downloads
+    // the document twice. Preserve HTTP errors instead of hiding them offline.
+    try {
+      const response = await event.preloadResponse
+      if (response) return response
+    } catch { /* A failed preload can still recover through the normal fetch. */ }
+    return fetch(event.request)
+  })().catch(() => new Response(
+    '<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Porchlight unavailable</title><body><main><h1>Porchlight is unavailable</h1><p>This app window could not connect to Porchlight. The PC must be awake and reachable to save recordings, analyze activity or send alerts. If you use a private VPN, keep it connected.</p><p>This screen contains no cached recordings or account information.</p><p><a href="/?porchlight-direct=1">Try again</a> using a direct browser connection.</p><p><small>Launch check: direct-navigation-v1</small></p></main></body></html>',
     { status: 503, headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store', 'Content-Security-Policy': "default-src 'none'; base-uri 'none'; frame-ancestors 'none'", 'X-Content-Type-Options': 'nosniff' } },
   )))
 })

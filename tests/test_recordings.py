@@ -1,4 +1,5 @@
 import asyncio
+import json
 import time
 from dataclasses import replace
 from datetime import UTC, datetime
@@ -8,7 +9,7 @@ from types import SimpleNamespace
 import pytest
 from fastapi.testclient import TestClient
 from porchlight.api.contracts import ApiError, HistoryControl
-from porchlight.config import Config
+from porchlight.config import ROOT, Config
 from porchlight.ingestion.history import history_id
 from porchlight.ingestion.imports import Importer
 from porchlight.ingestion.recordings import Recordings
@@ -241,6 +242,49 @@ def test_real_decoder_download_has_blink_provenance_and_preserves_distinct_event
         assert all(event.camera_id == "synthetic-camera" for event in events)
         assert all(event.timestamp_quality == "upstream" for event in events)
     assert service.view().archived == 2
+
+
+def test_fresh_blink_clip_and_generic_alert_work_with_no_ai_service(
+    authenticated: tuple[TestClient, dict[str, str]],
+    config: Config,
+    synthetic_mp4: bytes,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client, headers = authenticated
+    assert not client.get("/api/v1/settings").json()["ai_enabled"]
+    definition = json.loads(
+        (ROOT / "examples/notification-rule.example.json").read_text(encoding="utf-8")
+    )
+    created = client.post(
+        "/api/v1/notification-rules", headers=headers, json={"definition": definition}
+    )
+    assert created.status_code == 201, created.text
+    provider = SyntheticProvider(synthetic_mp4)
+    service = Recordings(config, client.app.state.db, provider, client.app.state.importer)
+    service.control(True)
+    clip = replace(provider.clip(1), captured_at=datetime.now(UTC).isoformat())
+    service.persist_page(provider.recording_source_id, RecordingPage([clip], True))
+    with client.app.state.db.session() as db:
+        identifier = db.scalar(select(RecordingReference.id))
+    asyncio.run(service.download(identifier))
+
+    async def no_ai(*args: object, **kwargs: object) -> None:
+        pytest.fail("The disabled automatic pipeline must not require an AI model")
+
+    monkeypatch.setattr(client.app.state.analysis, "ready_model", no_ai)
+    asyncio.run(client.app.state.analysis.schedule_new())
+    event = client.get("/api/v1/events").json()["items"][0]
+    assert event["camera_id"] == "synthetic-camera"
+    assert event["source_type"] == "blink_cloud" and event["captured_at"] == clip.captured_at
+    assert event["duration_seconds"] > 0 and event["analysis_status"] == "not_analyzed"
+    assert event["recognized_people"] == [] and event["object_categories"] == []
+    path = f"/api/v1/media/{event['media_id']}"
+    assert client.get(path, headers={"Range": "bytes=0-15"}).status_code == 206
+    assert client.get(path + "/thumbnail").status_code == 200
+    client.app.state.notifications.dispatch()
+    alerts = client.get("/api/v1/notifications").json()["items"]
+    assert len(alerts) == 1 and alerts[0]["event_id"] == event["id"]
+    assert "New camera activity" in alerts[0]["body"]
 
 
 def test_interrupted_reference_commit_reuses_recovered_event(

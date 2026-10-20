@@ -1,5 +1,7 @@
 # Running the local development build
 
+New users can follow [Quick start](QUICK_START.md) and the interactive `setup.ps1` wrapper instead of this developer-oriented guide. The app works without Ollama; optional [AI setup](LOCAL_AI_SETUP.md) and [phone setup](PHONE_SETUP.md) are independent steps.
+
 This is a Windows development build, not the completed release. On 2026-10-08, the owner approved the first development snapshot in the private [kevindemara/Porchlight repository](https://github.com/kevindemara/Porchlight). Clone that repository with an authorized GitHub account, then follow the setup below. The application and private runtime data still run locally; a source push does not deploy the application or install a Windows service. Hardware, phone and release acceptance remain incomplete.
 
 Use PowerShell in the project directory outside OneDrive. Verified prerequisites on this PC: Python 3.12.10, Node 24.19.0 and npm 11.17.0. The backend requires Python >=3.12,<3.15; this development lock was tested on Windows with Python 3.12. Browser checks use an installed Microsoft Edge.
@@ -36,7 +38,7 @@ To stop the process, use Ctrl+C in its terminal or run `./stop.ps1` in a second 
 
 ## FFmpeg
 
-FFmpeg 9.0.2 and ffprobe are installed for this PC in `%LOCALAPPDATA%\Porchlight\tools\ffmpeg\bin`. Porchlight finds them directly; a global PATH change is unnecessary. On another PC, installing them is an explicit step:
+FFmpeg 9.0.2 and ffprobe are installed for this PC in `%LOCALAPPDATA%\Porchlight\tools\ffmpeg\bin`. Porchlight checks explicit `PORCHLIGHT_FFMPEG` / `PORCHLIGHT_FFPROBE` overrides first, then `tools\ffmpeg\bin` under its configured data root, the default data root, and finally PATH. This also supports a custom profile or an existing installation under a redirected Windows application folder; no global PATH change is necessary. A missing explicit override remains an error rather than silently selecting another executable. On another PC, installing them is an explicit step:
 
 ```powershell
 .\scripts\install-ffmpeg.ps1

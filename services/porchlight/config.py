@@ -139,5 +139,8 @@ class Config(BaseSettings):
         configured = self.ffmpeg if name == "ffmpeg" else self.ffprobe
         if configured:
             return str(configured.resolve()) if configured.is_file() else None
-        installed = default_data_root() / "tools/ffmpeg/bin" / f"{name}.exe"
-        return str(installed) if installed.is_file() else shutil.which(name)
+        for root in (self.data_root, default_data_root()):
+            installed = root / "tools/ffmpeg/bin" / f"{name}.exe"
+            if installed.is_file():
+                return str(installed)
+        return shutil.which(name)
