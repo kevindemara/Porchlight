@@ -4,6 +4,8 @@ Recorded 2026-10-06. Package metadata is an intake record; public distribution s
 
 Optional detector intake added 2026-10-07: `opencv-python-headless==4.14.0.94` (Apache-2.0) and `numpy==2.5.3` (BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0), installed only after specific owner approval. These are pinned separately in `requirements.faces.lock`; `record-dependencies.py` excludes them from the mandatory base lock. Exact model provenance, native-test scope, external weight location and advisory check are in [FACE_DETECTION.md](FACE_DETECTION.md). Wheel notices are retained under `notices/python/`; YuNet’s MIT notice is `notices/YUNET-LICENSE.txt`.
 
+Notice follow-up, 2026-10-20: the uri-js-replace 1.0.1 row preserves its declared npm MIT metadata. The verified identical upstream code has a retained MIT-0 grant; see [notice review](NOTICE_REVIEW.md) and [NOTICE_SOURCES.json](NOTICE_SOURCES.json). Dependency versions are unchanged.
+
 ## Python
 
 | Package | Exact version | Declared licence |

@@ -11,7 +11,7 @@ Porchlight is a Windows development preview. Its original code/documentation are
 | Live viewing | Owner confirmed phone Live View over direct cellular HTTPS | Bounded, experimental and capability-gated. Audio requires a usable supplied track. Broader Record/Snapshot/reconnect hardware acceptance remains incomplete. No two-way talk or continuous recording. |
 | Phone | Owner confirmed Android home-screen use, actual push text/name updates, a thumbnail and direct cellular access without the private VPN | Not a guarantee for every browser/OS. Test locked-screen Wi-Fi/cellular delivery, session expiry, revocation and exact-recording taps as a matrix. Thumbnail timing and display vary. |
 | Operations | Persistent queue, backup/restore tests and redacted diagnostics | Fresh owner archive backup/restore, clean dependency install, 24–48-hour soak, sleep/resume and real network-loss acceptance remain open. |
-| Distribution | MIT selected; pinned dependencies and retained notices; current advisory query | One upstream development-dependency notice remains unresolved; history contains old machine-specific paths. No executable/model redistribution clearance implied. |
+| Distribution | MIT selected; pinned dependencies and retained notices; current advisory query | The identified notice gap and reachable-history machine paths are resolved. Other platform/native/model distribution reviews remain separate; no executable/model redistribution clearance is implied. |
 
 AI is optional. Without it, available recordings, source/camera/time metadata, measured duration, playback, notes and generic alerts remain usable. No action or person is invented from missing AI output. Historical imports remain silent and do not trigger automatic analysis or activity alerts.
 

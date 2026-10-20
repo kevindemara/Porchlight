@@ -1,20 +1,27 @@
-# Dependency notice review Â· 2026-10-07
+# Dependency notice review - updated 2026-10-20
 
-This is a local package audit, not distribution clearance. No dependency was installed and no upstream source was copied for this review.
+The four previously missing frontend notices are now retained. This resolves the specific notice gap identified in the source-release review; it does not clear arbitrary future binary/model redistribution or uninstalled platform packages.
 
-All 66 Python versions in `requirements.lock` match the installed environment. The npm lock contains 85 entries; 25 platform-specific optional packages are absent on this Windows machine. Those absent packages cannot be described as having locally verified notice files.
+The original review covered 66 Python versions in requirements.lock and 85 npm lock entries. Twenty-five platform-specific optional packages were absent on this Windows machine, so their installed notices were not locally verified. No dependency was installed or upgraded for this follow-up.
 
-The initial audit found four installed frontend build dependencies with declared MIT metadata but no standalone licence/notice file in their installed package root or corresponding retained notice directory. Three upstream notices have since been retained, with exact-version package metadata checks and recorded SHA-256 digests:
-
-| Package | Locked version | Current evidence |
+| Package | Locked version | Retained evidence |
 |---|---|---|
-| @redocly/openapi-core | 1.34.20 | Retained [MIT notice at published gitHead](https://github.com/Redocly/redocly-cli/blob/b563864727f1c7524021196d27bad4524f32e667/LICENSE.md); matching packages/core version metadata |
-| @rolldown/binding-win32-x64-msvc | 1.2.12 | Retained [project MIT notice at exact release tag](https://github.com/rolldown/rolldown/blob/v1.2.12/LICENSE); matching parent package version and native binding MIT metadata. Full native redistribution review remains separate |
-| change-case | 5.4.4 | Retained [MIT notice at exact release tag](https://github.com/blakeembrey/change-case/blob/change-case%405.4.4/LICENSE); matching published gitHead/version metadata |
-| uri-js-replace | 1.0.1 | Unresolved: installed package and published gitHead tree contain no standalone notice; metadata alone is insufficient |
+| @redocly/openapi-core | 1.34.20 | MIT notice at published gitHead; matching package version metadata |
+| @rolldown/binding-win32-x64-msvc | 1.2.12 | Project MIT notice at exact release; matching parent/binding metadata |
+| change-case | 5.4.4 | MIT notice at exact release; matching published gitHead/version |
+| uri-js-replace | 1.0.1 | Authoritative upstream MIT-0 notice for byte-identical code; see verification below |
 
-Downloaded notice text is preserved verbatim in the corresponding `notices/frontend/` directories. [NOTICE_SOURCES.json](NOTICE_SOURCES.json) records source URLs, version metadata paths and SHA-256 digests. No executable code was downloaded or installed. For uri-js-replace, npm publishes gitHead `38927505b51a74b53444dc723be10e0d2e53823c`; a direct GitHub tree query found no licence/notice path. Do not substitute a generic MIT template or another project's notice. Resolving that release gap needs authoritative upstream notice/permission or an approved dependency replacement.
+## uri-js-replace resolution
 
-Other discovered package notice files remain in `notices/`; this review did not reissue or remove any licence. The dependency inventory includes the lock graph, including platform entries not installed here. These retained notices do not establish public-distribution clearance.
+The published 1.0.1 package declares MIT, but its published gitHead `38927505b51a74b53444dc723be10e0d2e53823c` has no standalone licence file. Checking only that commit missed the maintainer's later [merged licence addition](https://github.com/andreinwald/uri-js-replace/pull/5).
 
-FFmpeg and Ollama model weights remain outside the repository. Their packaging and weight licences need separate review before any redistribution. The owner selected MIT for Porchlight on 2026-10-20; the root LICENSE records that choice. The repository has private checkpoints; public distribution is still pending. The uri-js-replace published gitHead tree was rechecked on 2026-10-20 and still contains no standalone licence/notice. Do not bundle dependencies or model/native binaries as if this review cleared them. See [third-party intake](../THIRD_PARTY_NOTICES.md) and [release checklist](RELEASE_CHECKLIST.md).
+The authoritative [LICENSE at commit a34c9a5](https://github.com/andreinwald/uri-js-replace/blob/a34c9a5b7a317b6039b2b3cf9d024ee8e418d281/LICENSE) grants **MIT No Attribution (MIT-0)** and identifies Copyright 2025 andreinwald. Its exact 905 bytes are retained verbatim at [notices/frontend/uri-js-replace/LICENSE](../notices/frontend/uri-js-replace/LICENSE), SHA-256 `5caace045044f8e3dd302d2a6789b9824c1dec992a3e94cc8f75f5c81bad699e`.
+
+Verification on 2026-10-20:
+
+- The [upstream comparison](https://github.com/andreinwald/uri-js-replace/compare/38927505b51a74b53444dc723be10e0d2e53823c...a34c9a5b7a317b6039b2b3cf9d024ee8e418d281) changes only LICENSE, README.md and package.json.
+- All **12 source/distribution Git blobs** under src/ and dist/ are identical between the published commit and the licensed commit.
+- All **eight installed dist files** match their upstream Git blob IDs byte-for-byte. Individual SHA-256 hashes, sizes and Git IDs are recorded in [NOTICE_SOURCES.json](NOTICE_SOURCES.json).
+- The retained grant applies to that verified unchanged code. This record distinguishes the package's older MIT metadata from the verified upstream MIT-0 grant; it does not pretend the original npm archive contained this notice.
+
+No generic licence template was substituted, no code was copied into Porchlight, and no package/version/lockfile changed. Other packages keep their own notices. FFmpeg executables and model weights remain outside the repository and need separate review if bundled later. Porchlight original code/documentation use the owner-selected [MIT licence](../LICENSE).

@@ -1,5 +1,5 @@
 {
-  "checked": "2026-10-07",
+  "checked": "2026-10-20",
   "records": [
     {
       "package": "@redocly/openapi-core",
@@ -27,6 +27,71 @@
       "bytes": 1302,
       "sha256": "23ecfff35a5a2e80d92142f75228912c3b1abc4b5a8337a821ff4397e2f9f734",
       "retained_file": "notices/frontend/@rolldown/binding-win32-x64-msvc/LICENSE"
+    },
+    {
+      "package": "uri-js-replace",
+      "version": "1.0.1",
+      "declared_package_license": "MIT",
+      "verified_upstream_license": "MIT-0",
+      "source": "https://raw.githubusercontent.com/andreinwald/uri-js-replace/a34c9a5b7a317b6039b2b3cf9d024ee8e418d281/LICENSE",
+      "package_metadata_source": "https://raw.githubusercontent.com/andreinwald/uri-js-replace/38927505b51a74b53444dc723be10e0d2e53823c/package.json",
+      "upstream_license_commit": "a34c9a5b7a317b6039b2b3cf9d024ee8e418d281",
+      "published_git_head": "38927505b51a74b53444dc723be10e0d2e53823c",
+      "upstream_comparison": "https://github.com/andreinwald/uri-js-replace/compare/38927505b51a74b53444dc723be10e0d2e53823c...a34c9a5b7a317b6039b2b3cf9d024ee8e418d281",
+      "comparison_result": "Only LICENSE, README.md and package.json changed; src/ and dist/ Git blobs are identical. All eight installed dist files match the upstream blobs.",
+      "bytes": 905,
+      "sha256": "5caace045044f8e3dd302d2a6789b9824c1dec992a3e94cc8f75f5c81bad699e",
+      "retained_file": "notices/frontend/uri-js-replace/LICENSE",
+      "verified_installed_files": [
+        {
+          "path": "dist/Parse.d.ts",
+          "git_blob": "17c82cbed322a191f86200686309ea1640249098",
+          "sha256": "216412f23780197a409c52b3b9751933babfdc32b3add183c8589b23fb401b3d",
+          "bytes": 106
+        },
+        {
+          "path": "dist/Parse.js",
+          "git_blob": "80a682ee47aa06a293839708f59f328b5028eb53",
+          "sha256": "ed860ba8edfe49bf1c9ccbaac46a1cb8b6abd78348111cd46e5a094583d4aa6b",
+          "bytes": 3446
+        },
+        {
+          "path": "dist/Resolve.d.ts",
+          "git_blob": "7a82a4ff5af38baac6b84a13490e790f883379be",
+          "sha256": "62683a2da53cf7228f443090ec8630aca9d61dd64b4ba05afa83066d09e106bd",
+          "bytes": 301
+        },
+        {
+          "path": "dist/Resolve.js",
+          "git_blob": "14dc62192d6f25a4a5f984ab6143cb8ea9c9d11e",
+          "sha256": "50195d12363b6b150d166624674e02ea74d322e6b4fef4dd99a443f61e90a1da",
+          "bytes": 3906
+        },
+        {
+          "path": "dist/Serialize.d.ts",
+          "git_blob": "7a32b546cb285cddae269e6a54d8a542950e9e08",
+          "sha256": "20b49e69aa6bd237bb18cf45c6561c3ae2dc4cb0390516fd7811125d2226d70e",
+          "bytes": 111
+        },
+        {
+          "path": "dist/Serialize.js",
+          "git_blob": "31a1ca2e32c8f0a98e12c561b51b445115df7d05",
+          "sha256": "970f140626cd4333386f42248462c08924241e2ac772f7ccf69576573602923b",
+          "bytes": 3125
+        },
+        {
+          "path": "dist/index.d.ts",
+          "git_blob": "47ab25c29d4176ee1aebefea1c37c6f952613024",
+          "sha256": "b3bfbcba00a92c4046f53d09a4fc04271e9d011a2dcb558b75f16934aac18d20",
+          "bytes": 935
+        },
+        {
+          "path": "dist/index.js",
+          "git_blob": "49934b7e74f557fba20b6971acaddaacb880887a",
+          "sha256": "45d565d4f7c274322f0109d439487e36b0ddb6a34e34969b63e2c00f6c280a6d",
+          "bytes": 1807
+        }
+      ]
     }
   ]
 }

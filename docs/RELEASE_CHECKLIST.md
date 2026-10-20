@@ -9,8 +9,8 @@ The latest [release evidence review](RELEASE_AUDIT.md) distinguishes tested soft
 - [x] Owner selected MIT; root licence, package metadata and GitHub credit are included.
 - [x] Clear source-install, optional AI, AI-disabled, hardware/module and phone guides are available.
 - [x] Current lockfile advisory query completed: no known OSV matches across 155 pinned versions on 2026-10-20.
-- [ ] Resolve the missing uri-js-replace upstream notice; review other distribution notices for the intended artifact/platforms.
-- [ ] Remove the historical machine paths or choose a clean-history publication plan; inspect Git author metadata and any GitHub attachments/artifacts. See [privacy review](REPOSITORY_PRIVACY_REVIEW.md).
+- [x] Resolve the missing uri-js-replace notice: retained authoritative MIT-0 grant, verified against unchanged upstream source and all eight installed dist files. Review additional platform/native/model notices before distributing those artifacts.
+- [x] Remove the four historical machine-path references from published main/checkpoint history, preserve a private backup, align the checkout and verify a fresh clone. Git author metadata uses noreply; there are no PRs, forks or releases. GitHub cache/other-clone limits are recorded in the [privacy review](REPOSITORY_PRIVACY_REVIEW.md).
 - [ ] Run a clean dependency installation using the guide, plus the software checks below. Windows PR/manual checks are configured; the first manual runner was blocked by GitHub account billing/spending limits before any steps ran. A clean local test is an alternative; no paid service is required.
 - [ ] Finish a fresh archive backup/restore and a 24–48-hour reliability soak, including automatic recovery, sleep/resume and network loss.
 - [ ] Record phone locked-screen/closed-app Wi-Fi/cellular, preview and tap-to-recording results; retain clear browser/device limitations.
@@ -22,7 +22,7 @@ The latest [release evidence review](RELEASE_AUDIT.md) distinguishes tested soft
 1. Use a clean checkout outside OneDrive/SMB. Run `bootstrap.ps1 -Check` for the read-only runtime preflight, then review `bootstrap.ps1` before explicitly installing its locked dependencies. Record Python/Node/Edge and FFmpeg versions.
 2. Run `test.ps1 -Browser`. Confirm native decoder checks ran, lint/types pass and the isolated desktop/tablet/phone/small-phone journeys pass. Do not call synthetic AI or push fixtures a real-device test.
 3. Run the approved native generated-image/video smoke test. Review sampled owner observations locally; complete the labelled holdout in the acceptance specification.
-4. Run `scripts/audit-dependencies.py` for the local preview; add `--online --include-push-candidates` for an explicit public-metadata advisory query. Inspect dependency notices, exact pins, model licences and intended distribution licence separately. The current [notice review](NOTICE_REVIEW.md) records three recovered notices and one unresolved upstream notice.
+4. Run `scripts/audit-dependencies.py` for the local preview; add `--online --include-push-candidates` for an explicit public-metadata advisory query. Inspect dependency notices, exact pins, model licences and intended distribution licence separately. The current [notice review](NOTICE_REVIEW.md) records four resolved notice gaps, including the verified uri-js-replace MIT-0 grant.
 5. Stop the app, create a new backup, verify a restore to a new folder, then check expected counts, playable originals and annotations. Restored automation must remain paused; reconnect secrets separately.
 
 ## Owner-dependent acceptance

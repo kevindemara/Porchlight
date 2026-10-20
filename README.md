@@ -89,6 +89,6 @@ Tests use isolated profiles and synthetic fixtures. They do not establish hardwa
 
 ## Licence and credits
 
-Porchlight's original code and documentation are [MIT licensed](LICENSE). Dependencies retain their own licences; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). FFmpeg executables and AI model weights are not bundled. A missing upstream development-dependency notice and the remaining acceptance checks are recorded in the release checklist.
+Porchlight's original code and documentation are [MIT licensed](LICENSE). Dependencies retain their own licences; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). FFmpeg executables and AI model weights are not bundled. The previously missing upstream notice is retained with verified provenance; remaining installation and reliability checks are recorded in the release checklist.
 
 Created by **[Kevin DeMara](https://github.com/kevindemara)**. GitHub credit also appears in the app footer.
