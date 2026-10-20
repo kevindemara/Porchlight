@@ -108,7 +108,7 @@ Stop and start Porchlight afterward. Open your configured HTTPS address on the p
 - Review setup: Settings → Review setup. Optional steps can be revisited.
 - The PC must remain awake and connected for new imports, local analysis, remote viewing and new alerts. Porchlight does not change sleep settings automatically.
 
-The same-PC clean dependency installation and synthetic startup/playback/restart are verified. Public release still needs the [release checklist](RELEASE_CHECKLIST.md), a separate stock Windows/new-user setup check and the remaining remote-device acceptance. The development PC passing tests is not proof that every Windows/GPU/camera combination works.
+The same-PC clean dependency installation and synthetic startup/playback/restart are verified. On 2026-10-20, the owner also reported passing the new-user Windows installation, fresh backup/restore, 24–48-hour soak and listed Wi-Fi/cellular phone checks. These are owner-reported results for the tested setup; script policy remains a prerequisite, and other Windows/GPU/camera combinations are not certified. See the [release checklist](RELEASE_CHECKLIST.md).
 
 ## Testing beside an existing installation
 

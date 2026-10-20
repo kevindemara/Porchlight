@@ -2,6 +2,8 @@
 
 Porchlight implements browser pairing, DPAPI-protected VAPID keys and subscriptions, per-device delivery intents, expiry, retry limits, revocation and a service-worker notification handler. This is optional. The clip archive, local AI and inbox work without it.
 
+Acceptance update, 2026-10-20: the owner reports passing Android locked-screen/closed-app alerts on Wi-Fi and cellular, thumbnails and tapping through to the matching recording. Earlier pending notes below describe the development stages; the owner's report supersedes those listed delivery checks for the tested setup. Other browsers/devices and unreported expiry/revocation cases remain unverified.
+
 The four pinned Python encryption packages were installed with owner approval and tested on the development PC on 2026-10-08. A native encrypted-payload round trip passed without sending to an external provider; actual phone delivery remains a separate gate. Their public release metadata was reviewed on 2026-10-07: pywebpush 2.5.0 and py-vapid 1.9.4 are MPL-2.0, cryptography 50.0.2 is Apache-2.0 OR BSD-3-Clause, and http-ece 1.2.1 is MIT. They are dependency API reuse; no upstream implementation was copied. Exact pins are in `requirements.push.lock`. Existing core packages are constrained by `requirements.lock`. A new installation still requires an explicit owner action.
 
 Review the preview:
