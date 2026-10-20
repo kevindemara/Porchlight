@@ -6,6 +6,9 @@ build-backend = "setuptools.build_meta"
 name = "porchlight"
 version = "0.1.0"
 description = "A local-first Blink camera companion"
+license = "MIT"
+license-files = ["LICENSE", "THIRD_PARTY_NOTICES.md"]
+authors = [{name = "Kevin DeMara"}]
 requires-python = ">=3.12,<3.15"
 dependencies = [
   "fastapi>=0.142,<0.143", "uvicorn>=0.54,<0.55",

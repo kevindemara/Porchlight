@@ -1,4 +1,4 @@
-# Dependency notice review · 2026-10-07
+# Dependency notice review Â· 2026-10-07
 
 This is a local package audit, not distribution clearance. No dependency was installed and no upstream source was copied for this review.
 
@@ -17,4 +17,4 @@ Downloaded notice text is preserved verbatim in the corresponding `notices/front
 
 Other discovered package notice files remain in `notices/`; this review did not reissue or remove any licence. The dependency inventory includes the lock graph, including platform entries not installed here. These retained notices do not establish public-distribution clearance.
 
-FFmpeg and Ollama model weights remain outside the repository. Their packaging and weight licences need separate review before any redistribution. The owner must choose Porchlight's distribution licence and accept the private release. Nothing has been pushed. See [third-party intake](../THIRD_PARTY_NOTICES.md) and [release checklist](RELEASE_CHECKLIST.md).
+FFmpeg and Ollama model weights remain outside the repository. Their packaging and weight licences need separate review before any redistribution. The owner selected MIT for Porchlight on 2026-10-20; the root LICENSE records that choice. The repository has private checkpoints; public distribution is still pending. The uri-js-replace published gitHead tree was rechecked on 2026-10-20 and still contains no standalone licence/notice. Do not bundle dependencies or model/native binaries as if this review cleared them. See [third-party intake](../THIRD_PARTY_NOTICES.md) and [release checklist](RELEASE_CHECKLIST.md).

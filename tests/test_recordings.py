@@ -22,6 +22,190 @@ from sqlalchemy import func, select
 NAMESPACE = "94d75fc3-8c8d-42df-bd15-5a6669ad347c"
 
 
+def test_unavailable_listing_is_retryable() -> None:
+    with pytest.raises(ApiError) as failure:
+        normalize_page(None, NAMESPACE, "synthetic-account", {})
+    assert failure.value.retryable
+
+
+def test_interrupted_fourth_temporary_attempt_enters_cooldown_after_restart(
+    recording_service, config: Config, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    service, db, provider = recording_service
+    clock = time.time() + 1
+    monkeypatch.setattr("porchlight.ingestion.recordings.time", SimpleNamespace(time=lambda: clock))
+    with db.session() as session:
+        job = session.scalar(select(Job).where(Job.type == "blink_discover"))
+        job.status, job.attempt, job.safe_error = "running", 4, "BLINK_RATE_LIMITED"
+        job.available_at, job.lease_until = clock - 1, clock + 300
+        session.commit()
+    resumed = Recordings(config, db, provider, service.importer)
+    assert resumed.claim() is None
+    with db.session() as session:
+        job = session.get(Job, job.id)
+        assert job.status == "queued" and job.available_at == clock + 900
+    clock += 901
+    claimed = resumed.claim()
+    assert claimed and claimed.attempt == 1
+
+
+def test_temporary_listing_failure_preserves_page_and_resumes_automatically(
+    recording_service, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    service, db, provider = recording_service
+    clock = time.time() + 1
+    monkeypatch.setattr("porchlight.ingestion.recordings.time", SimpleNamespace(time=lambda: clock))
+    original = provider.recording_page
+
+    async def interrupted(since: float, page: int) -> RecordingPage:
+        if page == 2:
+            normalize_page(None, NAMESPACE, "synthetic-account", {})
+        return await original(since, page)
+
+    monkeypatch.setattr(provider, "recording_page", interrupted)
+    claimed = service.claim()
+    assert claimed
+    asyncio.run(service.execute(claimed))
+    with db.session() as session:
+        scan = session.get(RecordingScan, provider.recording_source_id)
+        assert scan.page == 2
+        saved_since = scan.since
+        job = session.get(Job, claimed.id)
+        assert job.status == "queued"
+        clock = job.available_at
+    provider.page_count = 2
+    monkeypatch.setattr(provider, "recording_page", original)
+    # Existing downloads have priority; run only the discovery job here.
+    with db.session() as session:
+        job = session.get(Job, claimed.id)
+        job.status, job.attempt = "running", job.attempt + 1
+        session.commit()
+        claimed = job
+    asyncio.run(service.execute(claimed))
+    with db.session() as session:
+        scan = session.get(RecordingScan, provider.recording_source_id)
+        assert scan.page == 1 and scan.checked_at == clock and scan.since >= saved_since
+        assert session.scalar(select(func.count()).select_from(RecordingReference)) == 2
+
+
+def test_expired_old_clip_does_not_mark_healthy_new_discovery_stopped(recording_service) -> None:
+    service, _db, provider = recording_service
+    service.persist_page(
+        provider.recording_source_id, RecordingPage([replace(provider.clip(1), deleted=True)], True)
+    )
+    status = service.view()
+    assert status.failed == 1 and status.state == "queued"
+    assert "new clip checks continue" in status.message
+
+
+def test_temporary_outage_recovers_after_exhaustion_without_manual_retry(
+    recording_service, config: Config, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    service, db, provider = recording_service
+    clock = time.time() + 1
+    monkeypatch.setattr("porchlight.ingestion.recordings.time", SimpleNamespace(time=lambda: clock))
+    monkeypatch.setattr("porchlight.ingestion.recordings.random.uniform", lambda _a, _b: 0)
+
+    async def unavailable(_: str) -> None:
+        raise ApiError(503, "RECORDING_LIST_UNAVAILABLE", "Synthetic outage.", True, 1800)
+
+    monkeypatch.setattr(service, "discover", unavailable)
+    for attempt in range(4):
+        claimed = service.claim()
+        assert claimed and claimed.attempt == attempt + 1
+        asyncio.run(service.execute(claimed))
+        with db.session() as session:
+            job = session.get(Job, claimed.id)
+            assert job.status == "queued" and job.available_at >= clock + 1800
+            due = job.available_at
+        assert service.claim() is None
+        clock = due
+    resumed = Recordings(config, db, provider, service.importer)
+    resumed.control(False)
+    assert resumed.claim() is None
+    resumed.control(True)
+    claimed = resumed.claim()
+    assert claimed and claimed.attempt == 1
+    provider.page_count = 0
+    asyncio.run(resumed.execute(claimed))
+    assert resumed.view().last_error_code is None
+    assert resumed.view().state == "queued"
+
+
+@pytest.mark.parametrize(
+    "code, recovered",
+    [
+        ("RECORDING_LIST_UNAVAILABLE", True),
+        ("CLIP_TRANSFER_FAILED", True),
+        ("BLINK_AUTH_REQUIRED", False),
+        ("RECORDING_CONTRACT_CHANGED", False),
+        ("SOURCE_MEDIA_EXPIRED", False),
+        ("ACCOUNT_CHANGED", False),
+    ],
+)
+def test_legacy_failed_jobs_only_recover_known_temporary_errors(
+    recording_service, monkeypatch: pytest.MonkeyPatch, code: str, recovered: bool
+) -> None:
+    service, db, _provider = recording_service
+    clock = time.time() + 1
+    monkeypatch.setattr("porchlight.ingestion.recordings.time", SimpleNamespace(time=lambda: clock))
+    with db.session() as session:
+        job = session.scalar(select(Job).where(Job.type == "blink_discover"))
+        job.status, job.safe_error, job.attempt = "failed", code, 4
+        session.commit()
+    assert service.claim() is None
+    with db.session() as session:
+        job = session.scalar(select(Job).where(Job.type == "blink_discover"))
+        assert job.status == ("queued" if recovered else "failed")
+        if recovered:
+            assert job.available_at >= clock + 900 and job.attempt == 0
+    clock += 901
+    assert bool(service.claim()) == recovered
+
+
+def test_legacy_recovery_keeps_pause_account_source_and_retry_after(recording_service) -> None:
+    service, db, provider = recording_service
+    later = time.time() + 7200
+    with db.session() as session:
+        base = session.scalar(select(Job).where(Job.type == "blink_discover"))
+        base.status, base.safe_error, base.available_at = "failed", "BLINK_RATE_LIMITED", later
+        for identifier, payload in [
+            ("other-account", {"source_id": "another-source"}),
+            (
+                "other-storage",
+                {"source_id": provider.recording_source_id, "source_type": "blink_local"},
+            ),
+            ("paused-history", {"source_id": provider.recording_source_id, "historical": True}),
+        ]:
+            session.add(
+                Job(
+                    id=identifier,
+                    type="blink_download",
+                    dedup_key=identifier,
+                    payload=payload,
+                    status="failed",
+                    safe_error="CLIP_TRANSFER_FAILED",
+                    available_at=0,
+                    attempt=4,
+                )
+            )
+        session.commit()
+    service.control(False)
+    assert service.claim() is None
+    with db.session() as session:
+        assert session.get(Job, base.id).status == "failed"
+        session.get(RecordingScan, provider.recording_source_id).enabled = True
+        session.commit()
+    assert service.claim() is None
+    with db.session() as session:
+        assert session.get(Job, base.id).available_at == later
+        assert session.get(Job, base.id).status == "queued"
+        assert all(
+            session.get(Job, identifier).status == "failed"
+            for identifier in ["other-account", "other-storage", "paused-history"]
+        )
+
+
 class SyntheticProvider:
     recording_source_id = "synthetic-source"
 

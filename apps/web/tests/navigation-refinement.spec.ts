@@ -6,6 +6,13 @@ test('simplified navigation preserves legacy links and keeps device changes expl
   await page.route('**/api/v1/cameras', route => route.fulfill({ json: { items: [camera] } }))
   await page.route('**/api/v1/cameras/*/commands/latest*', route => route.fulfill({ json: null }))
   await enterWorkspace(page)
+  const credit = page.locator('footer').getByRole('link', { name: 'Kevin DeMara', exact: true })
+  await credit.scrollIntoViewIfNeeded()
+  await expect(credit).toBeVisible()
+  await expect(credit).toHaveAttribute('href', 'https://github.com/kevindemara')
+  await expect(credit).toHaveAttribute('rel', 'noopener noreferrer')
+  await page.screenshot({ path: info.outputPath('github-footer-credit.png'), fullPage: true })
+  await page.evaluate(() => window.scrollTo(0, 0))
   const writes: string[] = []
   page.on('request', request => { if (request.url().includes('/api/v1/') && !['GET', 'HEAD'].includes(request.method())) writes.push(new URL(request.url()).pathname) })
   await expect(page.getByRole('navigation', { name: 'Main navigation' }).getByRole('link')).toHaveText(['Live View', 'Activity', 'Faces', 'Settings'])

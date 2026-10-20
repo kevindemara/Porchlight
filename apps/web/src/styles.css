@@ -119,6 +119,7 @@ form small { display: block; margin-top: 8px; }
 .quiet-note svg { flex-shrink: 0; }
 .quiet-note p { font-size: 12px; margin: 0; }
 .workspace-footer { font-size: 12px; text-align: center; padding: 15px 24px 24px; color: var(--muted); margin-top: auto; }
+.workspace-footer a { color: inherit; text-decoration: underline; text-underline-offset: 3px; }
 .settings-grid { display: grid; grid-template-columns: 1fr 1fr; align-items: start; gap: 22px; }
 .settings-grid--stacked { grid-auto-rows: 1px; grid-auto-flow: row dense; row-gap: 0; }
 .settings-grid--stacked > * { grid-row-end: span var(--settings-rows, 1); margin-bottom: 22px; }

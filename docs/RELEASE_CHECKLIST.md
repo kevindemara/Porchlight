@@ -1,8 +1,21 @@
 # Local release and removal runbook
 
-Keep this build local until the owner accepts the hardware and privacy checks. The first repository push is private. Do not publish runtime data, backup manifests, model files, private clips, session vaults or unredacted reports.
+Keep the repository private until publication checks and owner approval are complete. Development checkpoints have already been pushed privately. Do not publish runtime data, backup manifests, model files, private clips, session vaults or unredacted reports.
 
 The latest [release evidence review](RELEASE_AUDIT.md) distinguishes tested software from the remaining installation, phone, hardware and licence gates. Copied-source startup with existing dependencies is not a clean dependency installation.
+
+## Before changing repository visibility
+
+- [x] Owner selected MIT; root licence, package metadata and GitHub credit are included.
+- [x] Clear source-install, optional AI, AI-disabled, hardware/module and phone guides are available.
+- [x] Current lockfile advisory query completed: no known OSV matches across 155 pinned versions on 2026-10-20.
+- [ ] Resolve the missing uri-js-replace upstream notice; review other distribution notices for the intended artifact/platforms.
+- [ ] Remove the historical machine paths or choose a clean-history publication plan; inspect Git author metadata and any GitHub attachments/artifacts. See [privacy review](REPOSITORY_PRIVACY_REVIEW.md).
+- [ ] Run a clean dependency installation using the guide, plus the software checks below.
+- [ ] Finish a fresh archive backup/restore and a 24–48-hour reliability soak, including automatic recovery, sleep/resume and network loss.
+- [ ] Record phone locked-screen/closed-app Wi-Fi/cellular, preview and tap-to-recording results; retain clear browser/device limitations.
+- [ ] Keep no-plan/module retrieval experimental until genuinely new eligible local clips pass the hardware gate. This need not block an honestly labelled paid-cloud development preview.
+- [ ] Owner explicitly approves publication; create a reviewed release tag and change visibility only then.
 
 ## Reproducible software checks
 
@@ -24,6 +37,6 @@ Optional startup scripts are available for explicit review; no registration has 
 
 ## Safe removal
 
-Run `stop.ps1` and confirm graceful shutdown. Close the dev terminal. Before removing anything, use the printed resolved profile directory and make a verified backup of any recordings/notes you want to keep. No Windows service, scheduled task, firewall rule or tunnel has been installed during development. If you later opt into startup, preview `uninstall-startup.ps1` with the original data-root override and add `-Apply` to remove only the checked registration. It does not stop a running app or delete data. Revoke paired browsers/permission and owner-managed remote access separately if configured. The source checkout and its `.venv`/`node_modules` may then be removed manually; deleting source does not delete the separately stored profile.
+Run `stop.ps1` and confirm graceful shutdown. Close the dev terminal. Before removing anything, use the printed resolved profile directory and make a verified backup of any recordings/notes you want to keep. Review the optional startup and remote-access components you enabled; installations differ. Remove only registrations, firewall rules, DNS entries or connectors owned by this Porchlight deployment, using the configuration you saved outside Git. If you later opt into startup, preview `uninstall-startup.ps1` with the original data-root override and add `-Apply` to remove only the checked registration. It does not stop a running app or delete data. Revoke paired browsers/permission and owner-managed remote access separately if configured. The source checkout and its `.venv`/`node_modules` may then be removed manually; deleting source does not delete the separately stored profile.
 
-Removing the private profile deletes its archive and DPAPI vaults; this is irreversible and requires an explicit owner choice. Never delete the shared Ollama model store or unrelated FFmpeg installation. Ollama's owner-approved global local-only setting belongs to its shared server and survives app removal; review it separately with other applications in mind.
+Removing the private profile deletes its archive and DPAPI vaults; this is irreversible and requires an explicit owner choice. Never delete the shared Ollama model store or unrelated FFmpeg installation. Any separately owner-configured Ollama setting belongs to its shared server; review it separately with other applications in mind.

@@ -6,6 +6,17 @@ Start with a working camera archive. AI and phone access are optional additions;
 
 Use a local folder outside OneDrive, such as `C:\Apps\Porchlight`. Download/extract the repository there. Keep the PC’s normal Windows user account for setup and running the app; its encrypted credentials belong to that user.
 
+On [GitHub](https://github.com/kevindemara/Porchlight), choose **Code → Download ZIP**, extract the ZIP, and open the extracted folder containing `setup.ps1`. Do not run scripts from inside the ZIP. While the repository is private, only invited accounts can download it.
+
+Alternatively, if Git is installed, open PowerShell in your chosen parent folder:
+
+```powershell
+git clone https://github.com/kevindemara/Porchlight.git
+Set-Location Porchlight
+```
+
+Git is optional for a ZIP installation. Do not enter GitHub or Blink passwords in a script or this repository.
+
 Install these prerequisites if missing:
 
 - [Python for Windows](https://www.python.org/downloads/windows/), version **3.12 through 3.14**. Tick **Add Python to PATH** in its installer. The development build was tested with 3.12.10.
@@ -61,6 +72,22 @@ Use the Phone step and [phone setup](PHONE_SETUP.md). [Direct home HTTPS](DIRECT
 
 After connecting, install from Chrome’s menu, pair notifications and test locked-screen Wi-Fi/cellular delivery and tap-to-play separately. Receiving text does not prove the phone can fetch a private thumbnail or video.
 
+### Enable optional Web Push
+
+On the PC, preview the separate optional installation:
+
+```powershell
+.\scripts\enable-webpush.ps1
+```
+
+If you want phone push and approve the displayed package installation, run:
+
+```powershell
+.\scripts\enable-webpush.ps1 -Install
+```
+
+Stop and start Porchlight afterward. Open your configured HTTPS address on the phone, sign in, then open **Settings → Notifications**. Allow browser notifications and pair this browser using the page controls. Send its test notification before testing a new camera event. Optionally enable descriptions; AI must complete before descriptive updates can arrive. The PC must stay awake, and encrypted messages pass through browser-vendor push services. See [Web Push](WEB_PUSH.md) for permissions, revocation and troubleshooting. Installing the home-screen icon alone does not grant notification permission.
+
 ## Everyday use
 
 - Start: `./start.ps1`; open the PC or approved phone address.
@@ -69,3 +96,39 @@ After connecting, install from Chrome’s menu, pair notifications and test lock
 - The PC must remain awake and connected for new imports, local analysis, remote viewing and new alerts. Porchlight does not change sleep settings automatically.
 
 Public release still needs the [release checklist](RELEASE_CHECKLIST.md), a real clean dependency installation and actual remote-device acceptance. The development PC passing tests is not proof that every Windows/GPU/camera combination works.
+
+## Update safely
+
+1. Stop Porchlight with `.\stop.ps1`. Back up the archive to a **new empty local destination** outside the checkout:
+
+   ```powershell
+   .\backup.ps1 -Destination C:\PorchlightBackups\before-update
+   ```
+
+2. For a Git installation, check `git status` and preserve your own source edits before running `git pull --ff-only`. For a ZIP installation, extract the new source to a new folder; keep the old checkout until the new version works. Neither route should replace the separately stored runtime profile.
+3. Run `.\setup.ps1 -Check`, then `.\setup.ps1` to review/install the new locked dependencies and build the interface. Start with `.\start.ps1` and verify login, recent clips and diagnostics. Do not start two instances against the same profile.
+4. Keep the backup until verification is complete. Database migrations may prevent simply running old code against an updated profile. To roll back, follow [backup/restore](ARCHIVE_AND_BACKUP.md), restoring to a **new** profile rather than overwriting the live archive.
+
+Restoring begins with a read-only validation:
+
+```powershell
+.\restore.ps1 -Backup C:\PorchlightBackups\before-update -Destination C:\PorchlightRestored
+```
+
+Only add `-Apply` after reviewing that validation and choosing to create the new destination. Reconnect credentials separately and review paused automation after restore. Backups contain private footage and notes; protect them and never commit them.
+
+## Common problems
+
+| Symptom | Check |
+|---|---|
+| PC page will not open | Keep the `start.ps1` terminal open; read its error. Confirm no second instance is already running. The default is HTTP on loopback port 8765. |
+| Configure FFmpeg | Accept the separate media-tools offer in setup, or configure supported executables as documented. Stop/start after installation. Diagnostics should detect both FFmpeg and ffprobe. |
+| New clips are delayed | Check Cameras & recording for enabled sync and its next eligible check. Cloud discovery defaults to 60 seconds; downloads, AI and upstream availability add delay. Temporary errors recover automatically with backoff and a 15-minute cooldown after repeated failures. |
+| Sign-in required / changed account | Complete Blink authentication in the local form, then explicitly resume recording work. Repeated retries cannot repair an expired login. |
+| Source media expired | Blink no longer provides that old clip. It stays unavailable; healthy new-clip discovery continues. |
+| Card has data but the local feed is empty | Paid-plan daily backups differ from playable Local Storage clips. Confirm a genuinely new playable clip in Blink's local list before testing Porchlight retrieval. |
+| AI unavailable or slow | Choose Use Porchlight without AI; recording collection continues. Review the local AI guide before installing a different model. |
+| Phone says unavailable | First open the exact HTTPS address in Chrome. Check that the PC and proxy are running, the certificate is trusted and your chosen network route works. A home-screen install cannot repair reachability. |
+| Notification has text but no image | Expand it, confirm phone login/reachability and refresh the notification worker using Settings. Android/browser image display varies; an encrypted push acknowledgement does not prove image display. |
+
+For help, share versions and redacted error codes. Do not attach private recordings, face samples, databases, credentials, certificate keys or unredacted diagnostics to public issues.

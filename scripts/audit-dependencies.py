@@ -117,7 +117,7 @@ def main() -> int:
             )
             return 0
         report = audit(queries)
-        report["includes_uninstalled_push_candidates"] = args.include_push_candidates
+        report["includes_optional_push_pins"] = args.include_push_candidates
         if args.output:
             args.output.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
         print(json.dumps(report))

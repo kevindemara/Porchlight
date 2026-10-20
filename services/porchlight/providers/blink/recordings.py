@@ -52,7 +52,7 @@ def normalize_page(
 ) -> list[ClipReference]:
     if not isinstance(body, dict) or not isinstance(body.get("media"), list):
         raise ApiError(
-            503, "RECORDING_LIST_UNAVAILABLE", "Blink's cloud recording list is unavailable."
+            503, "RECORDING_LIST_UNAVAILABLE", "Blink's cloud recording list is unavailable.", True
         )
     result = []
     for item in body["media"]:

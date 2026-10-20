@@ -295,7 +295,7 @@ export default function App() {
         {selectedEvent && <EventDetail key={selectedEvent.id} event={selectedEvent} aiReady={aiReady} timezone={settings?.timezone ?? 'America/Toronto'} onClose={closeRecording} onSaved={() => { if (selectedEvent) void refreshRecording(selectedEvent.id) }} />}
         {page === 'live' && <LivePage cameras={cameras} timezone={settings?.timezone ?? 'America/Toronto'} onSaved={refresh} onRecording={openRecording} />}
       </main>
-      <footer className="workspace-footer">Porchlight · Stored locally. Looked after by you.</footer>
+        <footer className="workspace-footer">Porchlight · Stored locally. Looked after by you. · Built by <a href="https://github.com/kevindemara" target="_blank" rel="noopener noreferrer">Kevin DeMara</a></footer>
     </div>
   </div>
 }

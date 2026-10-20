@@ -1,46 +1,32 @@
-# Release evidence review · 2026-10-07
+# Release evidence review · 2026-10-20
 
-Porchlight is a runnable local development build with owner-confirmed paid-cloud playback and native local AI integration. It is not yet an accepted subscription-free, background-phone or hardware-verified live release. This review applies the acceptance gates in [13](13_TESTS_AND_ACCEPTANCE.md) and the audit prompt; it does not certify every possible security or device behavior.
+This review supersedes the October 7 release summary. Porchlight is a runnable Windows development preview, with real owner-confirmed paid-cloud archiving, local AI review, Android push and direct cellular HTTPS Live View. It is not yet accepted as a generally reliable subscription-free release. The repository remains private.
 
-## Findings and remaining gates, ordered by release impact
+## Evidence and publication gates
 
-1. **Subscription-free retrieval remains unverified.** The current owner account has a paid plan and Sync Module Core. Successful cloud imports cannot validate the proposed new module's no-plan local-storage path. Eligible hardware, owner-confirmed entitlement, three fresh clips and another after restart are required. The independent local adapter and capability guards have fixture coverage. See [compatibility](02_BLINK_COMPATIBILITY_AND_NO_SUBSCRIPTION.md).
-2. **Background phone delivery remains unverified.** Web Push application behavior is tested through controlled seams, but the optional encryption packages are not installed. Its native round-trip test is skipped. HTTPS reachability, actual Android pairing, closed/locked-screen display, revoked permission, Wi-Fi/cellular and authenticated notification tap need separate owner actions. Do not describe provider acceptance as observed phone delivery. See [phone setup](WEB_PUSH.md).
-3. **AI integration is demonstrated; scene accuracy is not.** After the owner enabled automatic AI, four newly retrieved cloud clips completed native Balanced analysis in31.53–50.02 seconds, with4–6 frames, accepted revisions and preserved originals. Prior manual Balanced/Light probes remain separate evidence. Only validated neutral fields and timing were inspected by coding tools. Neither these results nor schema validation establish visual truth. Owner review, the proposed labelled holdout, missed-event/unsupported-claim measurements and busy/idle GPU comparison remain pending. Earlier rejected Light output is retained in the evidence log; its later one-clip success does not erase that failure. See [hardware evidence](HARDWARE_VALIDATION.md).
-4. **Fresh installation and redistribution are incomplete.** A copied-source test proves that runtime modules, migrations, schemas, prompts and built assets work independently of the original source location, using the existing interpreter and installed dependencies. It does not install from lockfiles into a clean environment or prove another PC's prerequisites. Read-only bootstrap preflight is separately tested. Three missing exact-version notices were recovered; `uri-js-replace` 1.0.1 lacks an authoritative retained notice. The distribution licence and any model/native packaging review remain owner decisions. See [notice review](NOTICE_REVIEW.md).
-5. **Hardware and operational acceptance remain bounded.** Real relay/encoder delivery was measured with the exact approved Porchlight certificate pin. Generated browser fixtures do not prove actual camera browser playback, Record/Snapshot or reconnection. Actual controls, removable-storage failure, startup sign-in, sleep/resume, token/network loss and the proposed 24–48-hour soak remain unrun. No owner camera write, startup registration, tunnel or global setting change was performed during this review.
-6. **A clock-correction restart defect was confirmed and fixed.** Recovery previously changed running jobs to queued while retaining an availability timestamp that could lie in the future after a backward clock correction. Interrupted recording and unaccepted AI jobs now clamp availability to the new current time. Accepted AI results remain completed; unrelated queued backoff is retained. Focused tests first failed in both backward-clock cases, then passed for simulated ±one-hour changes, repeated claiming and deferred provider work. The fix is in `ingestion/recordings.py:65` and `ai/pipeline.py:57`. These simulations do not certify real Windows sleep/resume or clock adjustments while the application is stopped for an extended period; durable queued deadlines remain UTC.
-
-## Reviewed boundaries and evidence
-
-| Boundary | Concrete implementation / tests | Limit of evidence |
+| Boundary | Evidence now available | Remaining work |
 |---|---|---|
-| Host, Origin, remote setup, CSRF and sessions | `app.py:139` BoundaryMiddleware, `app.py:394` session cookie; security/remote/native source-checkout tests | Actual external HTTPS proxy not configured |
-| Private playback and offline behavior | Authenticated original/thumbnail/HEAD/Range routes; `apps/web/public/sw.js` fetch handler; catalog/import/PWA/browser tests | Phone playback variants require owner testing |
-| Local AI and safe evidence | `ai/ollama.py:78` runtime cloud policy; `ai/observations.py:21` frozen prompt/schema digest; analysis/Ollama/evidence tests | Schema, neutral formatting and frame hashes are not scene accuracy |
-| Durable archive and source partition | `ingestion/recordings.py`, `ingestion/history.py`; recordings/history/local-storage tests | New module, no-plan retrieval and real outage soak remain unverified |
-| Conflicting review/edit actions | Rule revisions0017, owner-label revisions0016; simultaneous update and four-viewport native API journeys | No owner rules were created for testing |
-| Keyboard and accessible names | Six-page Skip to content route/filter preservation and exposed-control names at four widths; long-history modal focus restoration | Bounded browser checks; actual assistive-technology and complete WCAG review are not established |
-| Recovery and source relocation | `test_native_lifecycle.py`, `test_source_checkout.py`, clock-change cases in recordings/analysis tests | Existing installed runtime, generated MP4 and isolated synthetic profiles only |
-| Licence/advisory intake | Locked inventory, retained notices and provenance hashes; prior point-in-time OSV/npm results | Not legal clearance or a perpetual vulnerability guarantee |
+| Durable archive | Real fresh paid-cloud imports and post-restart use; 12 additional clips recovered after a manual retry. Synthetic pagination, lease, deduplication, Retry-After and account/source isolation checks | Deploy the new automatic recovery behavior and observe a real temporary outage plus the soak. Old expired sources cannot be recovered. |
+| Optional AI | Native local inference; owner completed daytime/nighttime Qwen and face-match review | Quantified holdout and action/frame-selection comparison; no general accuracy claim. AI-disabled collection must stay functional. |
+| Phone | Native synthetic push encryption round trip; owner confirmed home-screen reopening, actual push descriptions/name/thumbnail delivery and direct cellular HTTPS Live View | Complete a recorded Wi-Fi/cellular × locked/closed-app acceptance matrix, tap-to-recording, permission/session expiry and preview timing. |
+| HTTPS operations | Owner-managed direct HTTPS worked on cellular; managed certificate issuance and reuse were verified | Observe future timed renewal and changing public-IP handling. Personal DNS/router/certificate/connector files remain outside Git. Generic setup guides are included. |
+| Local storage/no plan | XR+ present; official local list and adapter manifest were empty under an active paid plan | Genuinely new playable local clips, transfer/playback, restart and verified eligible no-plan evidence. No subscription change is required or authorized by this review. |
+| Installation | Bootstrap preflight and existing-environment copied-source tests | Install locked dependencies in a fresh environment, ideally a second Windows PC, using only the public instructions. Do not label a copied venv a clean install. |
+| Licensing | Owner approved MIT; root licence, package metadata, GitHub footer credit and third-party ledger updated | Resolve uri-js-replace 1.0.1's missing upstream notice or replace the dependency through a tested change. Review any future bundled binaries/weights separately. |
+| Privacy | Working files and 607 reachable historical blobs scanned locally at the start of this review; only brand/icon binaries found | Two historical BUILD_STATUS versions contain machine-specific paths (four matches). Sanitize history or choose a clean public-history publication plan before changing visibility. The scan is pattern-based, not a guarantee. |
+| Reliability | Existing backup/restore and worker isolation fixtures | A fresh private archive backup/restore and a 24–48-hour soak with sleep/resume, network loss and storage pressure. |
 
-All test media and test credentials are synthetic. Native AI input, archive data and backups remain outside the repository; no real imagery, raw model output or tokens were sent to coding tools. Nothing was pushed or deployed externally. See [build status](../BUILD_STATUS.md) for exact commands, totals, failed/skipped checks and the [implementation ledger](IMPLEMENTATION_AUDIT.md) for the original milestone scope.
+The current OSV query returned **no known advisory matches across 155 exact package versions** on 2026-10-20, including optional push pins. See [DEPENDENCY_AUDIT.json](DEPENDENCY_AUDIT.json). This is a dated advisory result; package notices and security review are separate. All media used by automated checks are synthetic. Coding tools did not open real recordings or export private account data.
 
-## Reproduce the software checks
+## Reproduce software and privacy checks
 
 ```powershell
-Set-Location -LiteralPath C:\Projects\Porchlight
-.\bootstrap.ps1 -Check
+.\setup.ps1 -Check
 .\test.ps1 -Browser
+.\.venv\Scripts\python.exe scripts/audit-repository.py --output C:\PrivateReviews\porchlight-source-review.json
+.\.venv\Scripts\python.exe scripts/audit-dependencies.py --online --include-push-candidates
 ```
 
-Do not run bootstrap installation, optional push installation or task registration merely to recheck an existing environment. `test.ps1` uses the existing runtime; native decoder and copied-source cases run against temporary profiles.
+Create the review directory outside the checkout first. The repository audit reports locations/categories without matched values and returns nonzero when manual triage is needed. Supply `--private-patterns` with an external JSON category-to-regex file to check personal identifiers. Fetch refs before reviewing history. Do not commit that private input or detailed report. See [privacy scope](REPOSITORY_PRIVACY_REVIEW.md).
 
-The current development app is served at `http://127.0.0.1:5174`, with backend 8765. For a built-only launch, first stop the existing owner backend cooperatively, close its dev terminal, then use:
-
-```powershell
-.\start.ps1
-# Open http://127.0.0.1:8765
-```
-
-Private release requires the remaining acceptance actions in [the runbook](RELEASE_CHECKLIST.md). Keep unverified capabilities visibly limited and retain private repository status when the owner approves the first push.
+Exact final commands and test totals for the current change are recorded in [BUILD_STATUS.md](../BUILD_STATUS.md). Tests prove code behavior in synthetic profiles; owner observations establish only the specific real integration described. No repository visibility change is part of this work.

@@ -31,6 +31,20 @@ from porchlight.storage.models import (
 )
 
 RECONCILE_SECONDS = 24 * 60 * 60
+RECOVERY_COOLDOWN = 15 * 60
+# Only observed temporary failures get recurring recovery. Configuration, expired
+# media, authentication and changed contracts must not become endless requests.
+TRANSIENT_ERRORS = frozenset(
+    {
+        "RECORDING_LIST_UNAVAILABLE",
+        "RECORDING_WORK_FAILED",
+        "BLINK_RATE_LIMITED",
+        "CLIP_TRANSFER_FAILED",
+        "LOCAL_MODULE_WAIT",
+        "LOCAL_MANIFEST_UNAVAILABLE",
+        "LOCAL_TRANSFER_UNAVAILABLE",
+    }
+)
 
 
 def instant(timestamp: float | None) -> str | None:
@@ -132,12 +146,20 @@ class Recordings:
                 state, message = "syncing", "Checking available recordings."
             elif active and active.status == "queued":
                 state, message = "queued", "Recording discovery is scheduled."
-            if failures or (active and active.safe_error):
+            if states.get("failed", 0) or (active and active.status in {"failed", "blocked"}):
                 state, message = (
                     "needs_attention",
                     "Some recording work could not complete. "
-                    "Sign in if requested; retries are bounded.",
+                    "Sign in if requested or review the reported reason.",
                 )
+            elif active and active.status == "queued" and active.safe_error in TRANSIENT_ERRORS:
+                state, message = (
+                    "queued",
+                    "Blink is temporarily unavailable. Sync will retry automatically with backoff; "
+                    "repeated failures use a longer cooldown. No retry click is needed.",
+                )
+            elif states.get("expired", 0):
+                message += " Older expired clips cannot be recovered; new clip checks continue."
             return RecordingSync(
                 source=self.source_type,
                 poll_interval_seconds=self.poll_interval,
@@ -198,7 +220,7 @@ class Recordings:
                 job.status, job.attempt, job.available_at, job.safe_error = (
                     "queued",
                     0,
-                    max(now, (scan.checked_at or 0) + self.poll_interval),
+                    max(now, job.available_at, (scan.checked_at or 0) + self.poll_interval),
                     None,
                 )
             if enabled:
@@ -248,15 +270,43 @@ class Recordings:
             if not regular_enabled and not history_enabled:
                 return None
             historical = func.coalesce(Job.payload["historical"].as_boolean(), False)
+            eligible = or_(
+                (Job.type == "blink_history") & history_enabled,
+                (Job.type == "blink_download") & historical & history_enabled,
+                (Job.type != "blink_history") & ~historical & regular_enabled,
+            )
+            # Upgrade previously failed temporary work without a manual retry.
+            # Persist the cooldown once, respecting any longer provider delay.
+            for retry in db.scalars(
+                select(Job).where(
+                    Job.type.in_(["blink_discover", "blink_download", "blink_history"]),
+                    Job.status == "failed",
+                    Job.safe_error.in_(TRANSIENT_ERRORS),
+                    Job.payload["source_id"].as_string() == source,
+                    func.coalesce(Job.payload["source_type"].as_string(), "blink_cloud")
+                    == self.source_type,
+                    eligible,
+                )
+            ):
+                reference = (
+                    db.get(RecordingReference, retry.payload.get("reference_id"))
+                    if retry.type == "blink_download"
+                    else None
+                )
+                if retry.type == "blink_download" and (
+                    reference is None or reference.state in {"archived", "expired", "deleted"}
+                ):
+                    continue
+                retry.status, retry.attempt, retry.lease_until = "queued", 0, None
+                retry.available_at = max(retry.available_at, now + RECOVERY_COOLDOWN)
+                if reference:
+                    reference.state = "pending"
+            db.flush()
             job = db.scalar(
                 select(Job)
                 .where(
                     Job.type.in_(["blink_discover", "blink_download", "blink_history"]),
-                    or_(
-                        (Job.type == "blink_history") & history_enabled,
-                        (Job.type == "blink_download") & historical & history_enabled,
-                        (Job.type != "blink_history") & ~historical & regular_enabled,
-                    ),
+                    eligible,
                     func.coalesce(Job.payload["source_type"].as_string(), "blink_cloud")
                     == self.source_type,
                     or_(
@@ -278,11 +328,18 @@ class Recordings:
                 return None
             if job:
                 if job.attempt >= 4:
-                    job.status, job.safe_error = "failed", "ATTEMPTS_EXHAUSTED"
+                    # The process can stop during its fourth attempt, before
+                    # execute() persists the cooldown. Retain a known temporary
+                    # error and recover without an extra immediate request.
+                    if job.safe_error in TRANSIENT_ERRORS:
+                        job.status, job.attempt, job.lease_until = "queued", 0, None
+                        job.available_at = max(job.available_at, now + RECOVERY_COOLDOWN)
+                    else:
+                        job.status, job.safe_error = "failed", "ATTEMPTS_EXHAUSTED"
                     db.commit()
                     return None
                 job.status, job.attempt, job.lease_until = "running", job.attempt + 1, now + 300
-                db.commit()
+            db.commit()
             return job
 
     def persist_page(
@@ -499,18 +556,25 @@ class Recordings:
             job.lease_until = None
             if error:
                 job.safe_error = error.code
+                cooldown = error.retryable and error.code in TRANSIENT_ERRORS and job.attempt >= 4
                 job.status = (
                     "blocked"
                     if error.code == "BLINK_AUTH_REQUIRED"
                     else "queued"
-                    if error.retryable and job.attempt < 4
+                    if error.retryable and (job.attempt < 4 or cooldown)
                     else "failed"
                 )
                 job.available_at = (
                     time.time()
-                    + max(120, 30 * 2**job.attempt, error.retry_after or 0)
+                    + max(
+                        RECOVERY_COOLDOWN if cooldown else 120,
+                        30 * 2**job.attempt,
+                        error.retry_after or 0,
+                    )
                     + random.uniform(0, 10)
                 )
+                if cooldown:
+                    job.attempt = 0
                 if job.type == "blink_download":
                     reference = db.get(RecordingReference, job.payload["reference_id"])
                     if reference:

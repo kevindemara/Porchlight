@@ -50,7 +50,7 @@ export default function RecordingSetup({ onChanged }: { onChanged: () => Promise
   }
   return <section className="panel settings-section">
     <div className="section-heading"><Download size={22} /><div><h2>Save camera recordings</h2><p>Copy available Blink cloud recordings into this PC’s archive.</p></div></div>
-    <p className="helper">Start with the last seven days. New clip checks run about every {status?.poll_interval_seconds ?? 60} seconds, with small timing variation. Downloads can add delay; errors use longer bounded retries. Original recordings stay in Blink.</p>
+    <p className="helper">Start with the last seven days. New clip checks run about every {status?.poll_interval_seconds ?? 60} seconds, with small timing variation. Temporary errors retry automatically with backoff and a longer cooldown after repeated failures. Sign-in or configuration problems may need your attention. Original recordings stay in Blink.</p>
     {status && <div className="notice" role="status"><strong>{status.state.replaceAll('_', ' ')}</strong><p>{status.message}</p>
       <p>{status.discovered} discovered · {status.archived} saved · {status.pending} waiting · {status.failed} unavailable</p>
       {status.incomplete && <p>Discovery is in progress; this is not a complete history yet.</p>}

@@ -2,6 +2,8 @@
 
 Reviewed on 2026-10-06 from public primary documentation/source. This is an engineering intake ledger, not a legal clearance opinion. No third-party repository source code is bundled in this package. Verify the licence at the exact version before code reuse or distribution, including dependencies and model weights.
 
+Owner decision, 2026-10-20: Porchlight original code and documentation use the [MIT licence](../LICENSE). This supersedes earlier references to an undecided project licence; it does not relicense dependencies or model weights.
+
 ## Reuse plan
 
 | Project | Observed licence/status | What to take | Decision |
@@ -28,13 +30,13 @@ Homebridge's current documentation includes cloud-polled motion and live-view ha
 
 For each reused dependency, record repository/package name, purpose, exact release/commit, licence identifier, licence source URL, copied versus linked versus subprocess use, transitive licences, security advisories checked, and date verified. Commit the lockfiles and a dependency report. Preserve required notices in distribution. Do not claim permission solely because a repository is public.
 
-Do not add a permissive licence to the whole product while silently incorporating differently licensed code. Leave the product's distribution licence as a deliberate owner decision. For a personal private build, keep the inventory anyway so future release decisions are not based on guesswork.
+Do not apply Porchlight's MIT licence to differently licensed third-party components. The owner's project licence decision is recorded above; preserve the dependency inventory and required notices for each distribution.
 
 FFmpeg builds can differ in licensing depending on enabled components. Record `ffmpeg -version` and `ffmpeg -buildconf`; do not bundle an arbitrary binary without reviewing its build/licence. Prefer an existing installed binary for development. [T4](15_SOURCES_AND_VERSIONING.md#t4)
 
 A future object detector needs separate review of **both** its implementation and its model weights. Do not automatically add an AGPL/commercial detector framework or assume a model file inherits a surrounding library's licence. The first version does not require a separate detector.
 
-An optional, owner-approved face **detector** was added on 2026-10-07 using OpenCV YuNet; no SFace recognizer, identity embedding or enrollment is included. Exact weight provenance, optional package pins, retained wheel/model notices and advisory intake are recorded in [FACE_DETECTION.md](FACE_DETECTION.md). Model weights remain outside source. This does not clear the whole product for distribution.
+Optional, owner-approved face detection uses OpenCV YuNet; later opt-in SFace recognition supports locally reviewed named profiles. Exact weight provenance, optional package pins, retained wheel/model notices and advisory intake are recorded in [FACE_DETECTION.md](FACE_DETECTION.md). Model weights remain outside source. This does not clear the whole product for distribution.
 
 ## Upstream baseline and validation
 
