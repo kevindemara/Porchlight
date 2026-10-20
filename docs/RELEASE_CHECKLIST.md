@@ -11,7 +11,7 @@ The latest [release evidence review](RELEASE_AUDIT.md) distinguishes tested soft
 - [x] Current lockfile advisory query completed: no known OSV matches across 155 pinned versions on 2026-10-20.
 - [ ] Resolve the missing uri-js-replace upstream notice; review other distribution notices for the intended artifact/platforms.
 - [ ] Remove the historical machine paths or choose a clean-history publication plan; inspect Git author metadata and any GitHub attachments/artifacts. See [privacy review](REPOSITORY_PRIVACY_REVIEW.md).
-- [ ] Run a clean dependency installation using the guide, plus the software checks below.
+- [ ] Run a clean dependency installation using the guide, plus the software checks below. Windows PR/manual checks are configured; the first manual runner was blocked by GitHub account billing/spending limits before any steps ran. A clean local test is an alternative; no paid service is required.
 - [ ] Finish a fresh archive backup/restore and a 24–48-hour reliability soak, including automatic recovery, sleep/resume and network loss.
 - [ ] Record phone locked-screen/closed-app Wi-Fi/cellular, preview and tap-to-recording results; retain clear browser/device limitations.
 - [ ] Keep no-plan/module retrieval experimental until genuinely new eligible local clips pass the hardware gate. This need not block an honestly labelled paid-cloud development preview.
