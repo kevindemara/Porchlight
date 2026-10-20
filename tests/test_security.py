@@ -7,7 +7,7 @@ from conftest import ORIGIN, claim
 from fastapi.testclient import TestClient
 from porchlight import config as configuration
 from porchlight.app import create_app
-from porchlight.config import Config
+from porchlight.config import ROOT, Config
 from porchlight.security.auth import COOKIE
 from porchlight.storage.models import Owner, Session
 from sqlalchemy import select
@@ -200,7 +200,7 @@ def test_runtime_and_cloud_endpoints_rejected(tmp_path: Path) -> None:
     with pytest.raises(ValueError):
         Config(host="0.0.0.0", data_root=tmp_path)
     with pytest.raises(ValueError):
-        Config(data_root=Path("C:/Projects/Porchlight/runtime"))
+        Config(data_root=ROOT / "runtime")
     with pytest.raises(ValueError):
         Config(data_root=tmp_path, timezone="not-a-timezone")
 

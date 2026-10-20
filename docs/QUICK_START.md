@@ -24,6 +24,19 @@ Install these prerequisites if missing:
 
 Ollama, Docker, a cloud database, a paid AI API and a Cloudflare account are **not** prerequisites. Recording access depends on the Blink hardware/storage/account; do not cancel a plan based on successful paid-cloud imports.
 
+### Check the PowerShell prerequisite
+
+This source installer also needs a PowerShell environment whose existing policy permits reviewed local scripts. The local clean-install test used PowerShell 7; the same PC's Windows PowerShell blocked scripts before setup could run. Python and Node alone do not resolve a script-policy restriction. PowerShell 7 is available from [Microsoft's installation guide](https://learn.microsoft.com/en-us/powershell/scripting/install/installing-powershell-on-windows), but installing another shell is not a guarantee that your policy permits scripts.
+
+In your chosen PowerShell window, these read-only commands show the version and policy:
+
+```powershell
+$PSVersionTable.PSVersion
+Get-ExecutionPolicy -List
+```
+
+If scripts are blocked, stop and use your administrator's approved signing/local-script workflow. Do not add an execution-policy bypass or change machine security settings just to follow this guide. This development preview does not yet include a signed packaged installer. See [Microsoft's policy explanation](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_execution_policies).
+
 Open the extracted folder in File Explorer, right-click empty space → **Open in Terminal** → choose **PowerShell**. Open a new terminal after installing prerequisites. Run:
 
 ```powershell
@@ -95,7 +108,13 @@ Stop and start Porchlight afterward. Open your configured HTTPS address on the p
 - Review setup: Settings → Review setup. Optional steps can be revisited.
 - The PC must remain awake and connected for new imports, local analysis, remote viewing and new alerts. Porchlight does not change sleep settings automatically.
 
-Public release still needs the [release checklist](RELEASE_CHECKLIST.md), a real clean dependency installation and actual remote-device acceptance. The development PC passing tests is not proof that every Windows/GPU/camera combination works.
+The same-PC clean dependency installation and synthetic startup/playback/restart are verified. Public release still needs the [release checklist](RELEASE_CHECKLIST.md), a separate stock Windows/new-user setup check and the remaining remote-device acceptance. The development PC passing tests is not proof that every Windows/GPU/camera combination works.
+
+## Testing beside an existing installation
+
+A second source checkout does **not** automatically create a separate archive: the default Windows user profile is shared. For an isolated test, use a new source folder, a separate `PORCHLIGHT_DATA_ROOT`, a different `PORCHLIGHT_PORT` and a separate process-local `LOCALAPPDATA` for media tools/phone configuration. Set these only in the dedicated test terminal, before setup/start, and use that same terminal environment to stop the test. Keep every test path outside your real archive and the source checkout.
+
+The clean-install validation used new dependency environments and empty caches, synthetic data only, and no Blink login. It left the real app running and checked that its original history remained present. Do not connect a second test actor to the same Blink account while the real app is connected. Your ordinary installation continues to use its existing profile and desktop launcher.
 
 ## Update safely
 

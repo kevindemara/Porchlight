@@ -4,7 +4,7 @@
 
 Porchlight is free, open-source software under the [MIT licence](LICENSE), created by [Kevin DeMara](https://github.com/kevindemara). It is an independent project and is not affiliated with Amazon or Blink.
 
-**Current status: development preview.** The application runs locally and has real paid-cloud and Android integration evidence. Fresh no-subscription retrieval, a clean-machine installation and the full reliability soak remain unverified. See [known limitations](docs/KNOWN_LIMITATIONS.md) and [release evidence](docs/RELEASE_AUDIT.md).
+**Current status: development preview.** The application runs locally and has real paid-cloud and Android integration evidence. A fresh source/dependency installation with synthetic playback is verified on the development Windows PC. A separate stock-Windows/new-user setup check, fresh no-subscription retrieval and the full reliability soak remain unverified. See [known limitations](docs/KNOWN_LIMITATIONS.md) and [release evidence](docs/RELEASE_AUDIT.md).
 
 ## What you can do
 
@@ -17,7 +17,7 @@ Porchlight is free, open-source software under the [MIT licence](LICENSE), creat
 
 ## Install and run
 
-This is a **Windows source installation**, not a packaged installer. You do not need Codex, Docker, a hosted database or an AI API key.
+This is a **Windows source installation**, not a packaged installer. You do not need Codex, Docker, a hosted database or an AI API key. The PowerShell scripts require an existing policy that permits reviewed local scripts; check the [PowerShell prerequisite](docs/QUICK_START.md#check-the-powershell-prerequisite) before starting. No policy bypass is included.
 
 1. Install [Python 3.12–3.14](https://www.python.org/downloads/windows/) and a supported [Node.js release, 22.12 or newer](https://nodejs.org/en/download). Enable Python PATH in its installer, then open a new PowerShell terminal.
 2. Download and extract this repository to a local folder outside OneDrive, or clone it:
